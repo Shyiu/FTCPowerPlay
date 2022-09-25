@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 
 // Tells the robot that this is TeleOp code
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp
@@ -16,7 +18,8 @@ public class OutreachTeleOp extends LinearOpMode {
     protected DcMotor frontLeft;
     protected DcMotor backLeft;
     protected DcMotor slide;
-    protected DcMotor clutch;
+    protected DcMotorSimple clutch;
+    protected DcMotorSimple test;
 
     @Override
     public void runOpMode() {
@@ -27,7 +30,8 @@ public class OutreachTeleOp extends LinearOpMode {
         backRight = hardwareMap.get(DcMotor.class, "backRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         slide = hardwareMap.get(DcMotor.class, "sliderMotor");
-        clutch = hardwareMap.get(DcMotor.class, "clutchMotor");
+        clutch = hardwareMap.get(DcMotorSimple.class, "clutchMotor");
+        test = hardwareMap.get(DcMotorSimple.class, "testMotor");
         // Reverses the direction of the left motors, to allow a positive motor power to equal
         // forwards and a negative motor power to equal backwards
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -55,25 +59,39 @@ public class OutreachTeleOp extends LinearOpMode {
             backLeft.setPower(leftTgtPower);
             frontRight.setPower(rightTgtPower);
             backRight.setPower(rightTgtPower);
-
+            //slide power control
             if(gamepad1.dpad_up) {
                 slide.setPower(1);
             } else if(gamepad1.dpad_down) {
                 slide.setPower(-1);
-            } else {
+            } else{
                 slide.setPower(0);
             }
-            if(gamepad1.a){
+
+            //Servo power control
+            double servoPower = 1.2;
+            if(gamepad1.b){
+                clutch.setDirection(DcMotorSimple.Direction.FORWARD);
                 clutch.setPower(1);
-            }else if(gamepad1.b){
-                clutch.setPower(-1);
-            }else{
-                clutch.setPower(0);
+            }else if(gamepad1.a){
+                clutch.setDirection(DcMotorSimple.Direction.FORWARD);
+                clutch.setPower(.42);
+            }
+
+            //testing servo power control
+            if (gamepad1.y) {
+                test.setPower(1);
+            }
+            else if(gamepad1.x){
+                test.setPower(.7);
             }
             // Makes the Driver Hub output the message
             // Left Target Power: A float from [-1,1]
             // Right Target Power: A float from [-1,1]
             // The current power of each motor
+            telemetry.addData("Pink Piece Servo Direction", clutch.getDirection());
+            telemetry.addData("Pink Piece Servo Power", clutch.getPower());
+
             telemetry.addData("Left Target Power", leftTgtPower);
             telemetry.addData("Right Target Power", rightTgtPower);
 
