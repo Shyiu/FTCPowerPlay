@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-// Tells the robot that this is TeleOp code
+// Tells the robot that this is TeleOp code (hello)
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp
 
 // LinearOpMode means that code is read sequentially
