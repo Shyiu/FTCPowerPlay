@@ -27,7 +27,6 @@ public class ManualMecanumDrive extends LinearOpMode {
         //Motors controlled by Game Controller 2
         DcMotor intakeControl = hardwareMap.dcMotor.get("intakeMotor");
         DcMotor slideControl = hardwareMap.dcMotor.get("sliderMotor");
-        DcMotor duckControl = hardwareMap.dcMotor.get("duckMotor");
 
         slideControl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slideControl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
