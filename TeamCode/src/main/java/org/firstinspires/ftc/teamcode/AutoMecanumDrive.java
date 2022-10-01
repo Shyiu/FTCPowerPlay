@@ -16,7 +16,7 @@ public class AutoMecanumDrive extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-
+        /**
         //Motors controlled by Game Controller 1
         DcMotor motorFrontLeft = hardwareMap.dcMotor.get("frontLeft");
         DcMotor motorBackLeft = hardwareMap.dcMotor.get("backLeft");
@@ -38,14 +38,11 @@ public class AutoMecanumDrive extends LinearOpMode {
 
         slideControl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slideControl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
+**/
         WebcamName webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
 
-        int FLOOR = 0;
-        int FIRST_LEVEL = 1795;
-        int SECOND_LEVEL = 4573;
-        int THIRD_LEVEL = 7249;
+
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         OpenCvCamera camera = OpenCvCameraFactory.getInstance().createWebcam(webcamName, cameraMonitorViewId);
         camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
@@ -75,7 +72,7 @@ public class AutoMecanumDrive extends LinearOpMode {
         if (isStopRequested()) return;
 
         while (opModeIsActive()) {
-
+/**
             //Function of Game Controller 1
             double y = -gamepad1.left_stick_y; // Remember, this is reversed!
             double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
@@ -170,6 +167,7 @@ public class AutoMecanumDrive extends LinearOpMode {
             telemetry.addData("down", gamepad2.dpad_down);
 
             telemetry.update();
+ */
         }
     }
 
