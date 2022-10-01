@@ -166,7 +166,7 @@ public class AutoMecanumDrive extends LinearOpMode {
             telemetry.addData("left", gamepad2.dpad_left);
             telemetry.addData("down", gamepad2.dpad_down);
 
-            telemetry.update();
+            telemetry.update(); DELETE THIS
  */
         }
     }
