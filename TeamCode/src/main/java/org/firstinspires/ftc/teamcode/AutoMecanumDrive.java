@@ -1,8 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -11,8 +11,9 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 
-@TeleOp
+@Autonomous
 public class AutoMecanumDrive extends LinearOpMode {
+    public PowerplayPipeline detector = new PowerplayPipeline(telemetry);
 
     @Override
     public void runOpMode() {
@@ -39,17 +40,21 @@ public class AutoMecanumDrive extends LinearOpMode {
         slideControl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slideControl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 **/
+        DcMotor testMotor = hardwareMap.dcMotor.get("testMotor");
+
         WebcamName webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
 
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         OpenCvCamera camera = OpenCvCameraFactory.getInstance().createWebcam(webcamName, cameraMonitorViewId);
+
         camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
             public void onOpened()
             {
+                camera.setPipeline(detector);
                 camera.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
             }
             @Override
@@ -72,6 +77,17 @@ public class AutoMecanumDrive extends LinearOpMode {
         if (isStopRequested()) return;
 
         while (opModeIsActive()) {
+            switch (detector.getLocation()) {
+                case LEFT:
+                    testMotor.setPower(1);
+                    break;
+                case RIGHT:
+                    testMotor.setPower(-1);
+                    break;
+                case NOT_FOUND:
+                    testMotor.setPower(0);
+            }
+            camera.stopStreaming();
 /**
             //Function of Game Controller 1
             double y = -gamepad1.left_stick_y; // Remember, this is reversed!
