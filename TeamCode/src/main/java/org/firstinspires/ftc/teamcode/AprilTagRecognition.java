@@ -52,7 +52,9 @@ public class AprilTagRecognition extends LinearOpMode
     // UNITS ARE METERS
     double tagsize = 0.127;
 
-    int ID_TAG_OF_INTEREST = 1; // Tag ID 18 from the 36h11 family
+    int ID_TAG_OF_INTEREST = 0; // Tag ID 18 from the 36h11 family
+    int ID_TAG_OF_INTEREST_2 = 4;
+    int ID_TAG_OF_INTEREST_3 = 7;
 
     AprilTagDetection tagOfInterest = null;
 
@@ -95,7 +97,7 @@ public class AprilTagRecognition extends LinearOpMode
 
                 for(AprilTagDetection tag : currentDetections)
                 {
-                    if(tag.id == ID_TAG_OF_INTEREST)
+                    if(tag.id == ID_TAG_OF_INTEREST || tag.id == ID_TAG_OF_INTEREST_2 || tag.id == ID_TAG_OF_INTEREST_3)
                     {
                         tagOfInterest = tag;
                         tagFound = true;
@@ -205,5 +207,6 @@ public class AprilTagRecognition extends LinearOpMode
         telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
         telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
         telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
+
     }
 }
