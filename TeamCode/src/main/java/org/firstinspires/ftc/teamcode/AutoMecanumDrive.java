@@ -13,7 +13,18 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 @Autonomous
 public class AutoMecanumDrive extends LinearOpMode {
-    public PowerplayPipeline detector = new PowerplayPipeline(telemetry);
+    // Lens intrinsics
+    // UNITS ARE PIXELS
+    // NOTE: this calibration is for the C920 webcam at 800x448.
+    // You will need to do your own calibration for other configurations!
+    double fx = 578.272 / (800.0/320);
+    double fy = 578.272 / (448.0/240);
+    double cx = 402.145 / (800.0/320);
+    double cy = 221.506 / (448.0/240);
+
+    // UNITS ARE METERS
+    double tagsize = 0.127;
+    public AprilTagPipeline detector = new AprilTagPipeline(tagsize,fx,fy,cx,cy);
 
     @Override
     public void runOpMode() {
@@ -77,16 +88,17 @@ public class AutoMecanumDrive extends LinearOpMode {
         if (isStopRequested()) return;
 
         while (opModeIsActive()) {
-            switch (detector.getLocation()) {
-                case LEFT:
-                    testMotor.setPower(1);
-                    break;
-                case RIGHT:
-                    testMotor.setPower(-1);
-                    break;
-                case NOT_FOUND:
-                    testMotor.setPower(0);
-            }
+
+//            switch (detector.getLocation()) {
+//                case LEFT:
+//                    testMotor.setPower(1);
+//                    break;
+//                case RIGHT:
+//                    testMotor.setPower(-1);
+//                    break;
+//                case NOT_FOUND:
+//                    testMotor.setPower(0);
+//            }
             camera.stopStreaming();
 /**
             //Function of Game Controller 1

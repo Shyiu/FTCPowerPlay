@@ -12,7 +12,7 @@ import org.openftc.easyopencv.OpenCvPipeline;
 public class PowerplayPipeline extends OpenCvPipeline
 
     {
-        static final double PERCENT_COLOR_THRESHOLD = .4;
+        static final double PERCENT_COLOR_THRESHOLD = .2;
         Telemetry telemetry;
 
         // Notice this is declared as an instance variable (and re-used), not a local variable
@@ -35,9 +35,10 @@ public class PowerplayPipeline extends OpenCvPipeline
         public Mat processFrame(Mat input)
         {
             Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGB2HSV);
-            Scalar lowHsv = new Scalar(23, 50, 70);
-            Scalar highHsv = new Scalar(32, 255, 255);
-            Core.inRange(mat, lowHsv, highHsv, mat);
+            Scalar lowYellowHsv = new Scalar(23, 50, 70);
+            Scalar highYellowHsv = new Scalar(32, 255, 255);
+
+            Core.inRange(mat, lowYellowHsv, highYellowHsv, mat);
 
             Mat right = mat.submat(RIGHT_ROI);
             Mat left = mat.submat(LEFT_ROI);
