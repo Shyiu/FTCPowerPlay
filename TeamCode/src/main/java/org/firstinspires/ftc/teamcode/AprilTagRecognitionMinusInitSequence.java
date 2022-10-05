@@ -32,8 +32,8 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Camera Recognition", group = "Camera")
-public class AprilTagRecognition extends LinearOpMode
+@Autonomous(name = "Camera Recognition Testing", group = "Camera")
+public class AprilTagRecognitionMinusInitSequence extends LinearOpMode
 {
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
@@ -45,13 +45,6 @@ public class AprilTagRecognition extends LinearOpMode
     final AprilTagDetection TAG_3 = createAprilTag(ID_TAG_OF_INTEREST_3);
 
 
-//    Hashtable<Integer, Integer> parking_zone_dictionary = new Hashtable<Integer, Integer>(){{
-//        parking_zone_dictionary.put(ID_TAG_OF_INTEREST,1);
-//        parking_zone_dictionary.put(ID_TAG_OF_INTEREST_2,2);
-//        parking_zone_dictionary.put(ID_TAG_OF_INTEREST_3,3);
-//
-//
-//    }};
 
     static final double FEET_PER_METER = 3.28084;
 

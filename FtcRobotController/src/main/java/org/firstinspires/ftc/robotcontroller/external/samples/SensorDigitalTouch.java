@@ -35,7 +35,7 @@ import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 /*
  * This is an example LinearOpMode that shows how to use
- * a REV Robotics Touch Sensor.
+ * a REV Robotics Touch Sensor.`
  *
  * It assumes that the touch sensor is configured with a name of "sensor_digital".
  *
@@ -60,7 +60,7 @@ public class SensorDigitalTouch extends LinearOpMode {
     public void runOpMode() {
 
         // get a reference to our digitalTouch object.
-        digitalTouch = hardwareMap.get(DigitalChannel.class, "sensor_touch");
+        digitalTouch = hardwareMap.get(DigitalChannel.class, "digital_touch");
 
         // set the digital channel to input.
         digitalTouch.setMode(DigitalChannel.Mode.INPUT);
