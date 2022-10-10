@@ -34,11 +34,12 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Camera Recognition Testing", group = "Camera")
+@Autonomous(name = "Tilerunner Auto", group = "Tilerunner")
 public class TileRunnerAuto extends LinearOpMode
 {
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
+
     final int ID_TAG_OF_INTEREST = 0;
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
@@ -57,7 +58,7 @@ public class TileRunnerAuto extends LinearOpMode
     double cy = 221.506;
 
     // UNITS ARE METERS
-    final double TAGSIZE = 0.127;
+    final double TAGSIZE = 0.05;
     private ElapsedTime runtime = new ElapsedTime();
 
     // Calculate the COUNTS_PER_INCH for your specific drive train.
@@ -154,7 +155,6 @@ public class TileRunnerAuto extends LinearOpMode
                     telemetry.addLine("Tag of interest is in sight!\n\nLocation data:");
                     tagToTelemetry(tagOfInterest);
                     telemetry.addLine("Information for Tag of Interest");
-                    outputAprilTagInformation(tagOfInterest);
 
                 }
                 else
@@ -169,7 +169,6 @@ public class TileRunnerAuto extends LinearOpMode
                     {
                         telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
                         tagToTelemetry(tagOfInterest);
-                        outputAprilTagInformation(tagOfInterest);
                     }
                 }
 
@@ -186,7 +185,6 @@ public class TileRunnerAuto extends LinearOpMode
                 {
                     telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
                     tagToTelemetry(tagOfInterest);
-                    outputAprilTagInformation(tagOfInterest);
                 }
 
             }
@@ -208,10 +206,10 @@ public class TileRunnerAuto extends LinearOpMode
                 parking_zone = 1;
             }
             if(tagOfInterest.id == 4){
-                parking_zone = 2;
+                parking_zone = 3;
             }
             if(tagOfInterest.id == 7){
-                parking_zone = 3;
+                parking_zone = 2;
             }
             tagToTelemetry(tagOfInterest,parking_zone);
             telemetry.update();
@@ -234,13 +232,13 @@ public class TileRunnerAuto extends LinearOpMode
         else
         {
             if (parking_zone == 1){
-                encoderDrive(.2,3,3,2);
+                encoderDrive(DRIVE_SPEED,3,-3,2);
             }
             if (parking_zone == 2){
-                encoderDrive(.2,4,4,2);
+                encoderDrive(DRIVE_SPEED,4,4,2);
             }
             if (parking_zone == 3){
-                encoderDrive(.2,5,5,2);
+                encoderDrive(DRIVE_SPEED,-3,3,2);
             }
         }
 
@@ -271,14 +269,7 @@ public class TileRunnerAuto extends LinearOpMode
         telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
 
     }
-    void outputAprilTagInformation(AprilTagDetection detection){
-        telemetry.addData("id: ", detection.id);
-        telemetry.addData("hamming: ", detection.hamming);
-        telemetry.addData("decisionMargin: ", detection.decisionMargin);
-        telemetry.addData("center: ", detection.center);
-        telemetry.addData("corners: ", detection.corners);
-        telemetry.addData("pose: ", detection.pose);
-    }
+
     public void encoderDrive(double speed,
                              double leftInches, double rightInches,
                              double timeoutS) {
@@ -298,8 +289,8 @@ public class TileRunnerAuto extends LinearOpMode
 
             frontLeft.setTargetPosition(newLeftTarget);
             frontRight.setTargetPosition(newRightTarget);
-            backLeft.setTargetPosition(newLeftTarget);
-            backRight.setTargetPosition(newRightTarget);
+            backLeft.setTargetPosition(newBackLeftTarget);
+            backRight.setTargetPosition(newBackRightTarget);
 
             // Turn On RUN_TO_POSITION
             frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -322,7 +313,7 @@ public class TileRunnerAuto extends LinearOpMode
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
             while (opModeIsActive() &&
                     (runtime.seconds() < timeoutS) &&
-                    (frontLeft.isBusy() && frontRight.isBusy())) {
+                    (frontLeft.isBusy() && frontRight.isBusy() && backLeft.isBusy() && backRight.isBusy())) {
 
                 // Display it for the driver.
                 telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
