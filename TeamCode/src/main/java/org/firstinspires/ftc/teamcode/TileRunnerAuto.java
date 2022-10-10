@@ -35,7 +35,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import java.util.ArrayList;
 
 @Autonomous(name = "Camera Recognition Testing", group = "Camera")
-public class AprilTagRecognitionMinusInitSequence extends LinearOpMode
+public class TileRunnerAuto extends LinearOpMode
 {
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
