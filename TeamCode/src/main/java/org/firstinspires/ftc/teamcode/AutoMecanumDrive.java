@@ -5,12 +5,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.openftc.easyopencv.OpenCvCamera;
-import org.openftc.easyopencv.OpenCvCameraFactory;
-import org.openftc.easyopencv.OpenCvCameraRotation;
-
-
 @TeleOp
 public class AutoMecanumDrive extends LinearOpMode {
 
@@ -39,35 +33,11 @@ public class AutoMecanumDrive extends LinearOpMode {
         slideControl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slideControl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        WebcamName webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
-
 
         int FLOOR = 0;
         int FIRST_LEVEL = 1795;
         int SECOND_LEVEL = 4573;
         int THIRD_LEVEL = 7249;
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        OpenCvCamera camera = OpenCvCameraFactory.getInstance().createWebcam(webcamName, cameraMonitorViewId);
-        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
-        {
-            @Override
-            public void onOpened()
-            {
-                camera.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
-            }
-            @Override
-            public void onError(int errorCode)
-            {
-                telemetry.addData("Camera Status", "Failed");
-
-                /*
-                 * This will be called if the camera could not be opened
-                 */
-            }
-        });
-
-
-
 
 
         waitForStart();
