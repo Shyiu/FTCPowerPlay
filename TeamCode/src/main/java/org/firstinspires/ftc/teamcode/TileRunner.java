@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorController;
+import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp
 public class TileRunner extends LinearOpMode {
@@ -18,10 +20,11 @@ public class TileRunner extends LinearOpMode {
     public void runOpMode() {
 
         // Pulls the motors from the robot configuration so that they can be manipulated
-        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
-        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
-        backRight = hardwareMap.get(DcMotor.class, "backRight");
-        backLeft = hardwareMap.get(DcMotor.class, "backLeft");
+        DcMotor motorFrontLeft = hardwareMap.dcMotor.get("frontLeft");
+        DcMotor motorBackLeft = hardwareMap.dcMotor.get("backLeft");
+        DcMotor motorFrontRight = hardwareMap.dcMotor.get("frontRight");
+        DcMotor motorBackRight = hardwareMap.dcMotor.get("backRight");
+        DcMotor motorSlide = hardwareMap.dcMotor.get("motorSlide");
 
         // Reverses the direction of the left motors, to allow a positive motor power to equal
         // forwards and a negative motor power to equal backwards
@@ -31,6 +34,18 @@ public class TileRunner extends LinearOpMode {
         // Makes the Driver Hub output the message "Status: Initialized"
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+
+        motorFrontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorFrontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorBackLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorBackRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        Servo claw = hardwareMap.get(Servo.class, "claw_servo");
+        double clawOpen = 1;
+        double clawClose = -.5;
+
+
 
 
         // Wait for the game to start (driver presses PLAY)
@@ -45,12 +60,15 @@ public class TileRunner extends LinearOpMode {
             double leftTgtPower = -this.gamepad1.left_stick_y;
             double rightTgtPower = -this.gamepad1.right_stick_y;
 
+            double slidePower = -this.gamepad2.left_stick_y;
+
             // Uses the current position of the joy-sticks and makes the motors move at the
             // respective speed
             frontLeft.setPower(leftTgtPower);
             backLeft.setPower(leftTgtPower);
             frontRight.setPower(rightTgtPower);
             backRight.setPower(rightTgtPower);
+            motorSlide.setPower(slidePower);
 
             // Makes the Driver Hub output the message
             // Left Target Power: A float from [-1,1]
@@ -58,11 +76,25 @@ public class TileRunner extends LinearOpMode {
             // The current power of each motor
             telemetry.addData("Left Target Power", leftTgtPower);
             telemetry.addData("Right Target Power", rightTgtPower);
+            telemetry.addData("Slide Motor Power", slidePower);
+            Servo.Direction direction = Servo.Direction.FORWARD;
+
+            claw.setDirection(direction);
+            if (gamepad2.y) {
+                claw.setPosition(clawOpen);
+            }
+            else if(gamepad2.x){
+                claw.setPosition(clawClose);
+            }
+
+            telemetry.addData("Servo Power" , claw.getPosition());
+            telemetry.update();
 
             telemetry.addData("Front Right Motor Power", frontRight.getPower());
             telemetry.addData("Front Left Motor Power", frontLeft.getPower());
             telemetry.addData("Back Right Motor Power", backRight.getPower());
             telemetry.addData("Back Left Motor Power", backLeft.getPower());
+            telemetry.addData("Slide Motor Power", motorSlide.getPower());
 
 
             // Status: Running
