@@ -41,9 +41,9 @@ public class TileRunner extends LinearOpMode {
         motorBackRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motorSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        Servo claw = hardwareMap.get(Servo.class, "claw_servo");
-        double clawOpen = 1;
-        double clawClose = -.5;
+        //Servo claw = hardwareMap.get(Servo.class, "claw_servo");
+        //double clawOpen = 1;
+        //double clawClose = -.5;
 
 
 
@@ -77,18 +77,18 @@ public class TileRunner extends LinearOpMode {
             telemetry.addData("Left Target Power", leftTgtPower);
             telemetry.addData("Right Target Power", rightTgtPower);
             telemetry.addData("Slide Motor Power", slidePower);
-            Servo.Direction direction = Servo.Direction.FORWARD;
+            //Servo.Direction direction = Servo.Direction.FORWARD;
 
-            claw.setDirection(direction);
-            if (gamepad2.y) {
-                claw.setPosition(clawOpen);
-            }
-            else if(gamepad2.x){
-                claw.setPosition(clawClose);
-            }
+            //claw.setDirection(direction);
+            //if (gamepad2.y) {
+            //    claw.setPosition(clawOpen);
+            //}
+            //else if(gamepad2.x){
+              //  claw.setPosition(clawClose);
+            //}
 
-            telemetry.addData("Servo Power" , claw.getPosition());
-            telemetry.update();
+            //telemetry.addData("Servo Power" , claw.getPosition());
+            //telemetry.update();
 
             telemetry.addData("Front Right Motor Power", frontRight.getPower());
             telemetry.addData("Front Left Motor Power", frontLeft.getPower());
