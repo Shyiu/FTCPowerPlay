@@ -18,10 +18,10 @@ public class ManualMecanumDrive extends LinearOpMode {
 
 
         //Motors controlled by Game Controller 1
-        DcMotor motorFrontLeft = hardwareMap.dcMotor.get("frontLeft");
-        DcMotor motorBackLeft = hardwareMap.dcMotor.get("backLeft");
-        DcMotor motorFrontRight = hardwareMap.dcMotor.get("frontRight");
-        DcMotor motorBackRight = hardwareMap.dcMotor.get("backRight");
+        DcMotor motorFrontRight = hardwareMap.get(DcMotor.class, MecanumHardware.fr);
+        DcMotor motorFrontLeft = hardwareMap.get(DcMotor.class, MecanumHardware.fl);
+        DcMotor motorBackRight = hardwareMap.get(DcMotor.class, MecanumHardware.br);
+        DcMotor motorBackLeft = hardwareMap.get(DcMotor.class, MecanumHardware.bl);
 
         motorFrontLeft.setDirection(DcMotor.Direction.REVERSE);
         motorBackLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -37,9 +37,12 @@ public class ManualMecanumDrive extends LinearOpMode {
         Servo claw = hardwareMap.get(Servo.class, "claw_servo");
 
         armJoint1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        double clawOpen = 1;
+        double clawOpen = .16;
         double clawClose = -.5;
         double lockJoint2 = 0;
+
+        claw.setPosition(clawClose);
+
         waitForStart();
 
         if (isStopRequested()) return;
@@ -95,8 +98,13 @@ public class ManualMecanumDrive extends LinearOpMode {
             //Function of Game Controller 2
 
 
-            armJoint2.setPower(joint2Position);
-            armJoint1.setPower(y2/2.0);
+            armJoint1.setPower(Math.pow(y2,2));
+            if (Math.abs(y2) > 0.25){
+                armJoint2.setPower(armJoint2.getPower()-(y2/10.0));
+            }
+            else{
+                armJoint2.setPower(joint2Position);
+            }
 
             claw.setDirection(direction);
             if (gamepad2.y) {

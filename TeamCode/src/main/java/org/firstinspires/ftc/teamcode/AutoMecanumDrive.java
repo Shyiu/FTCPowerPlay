@@ -1,219 +1,343 @@
-package org.firstinspires.ftc.teamcode;
+/*
+ * Copyright (c) 2021 OpenFTC Team
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
+import java.util.ArrayList;
 
-@Autonomous
-public class AutoMecanumDrive extends LinearOpMode {
+@Autonomous(name = "Mecanum Auto", group = "Mecanum Autonomous")
+public class AutoMecanumDrive extends LinearOpMode
+{
+    OpenCvCamera camera;
+    AprilTagPipeline aprilTagDetectionPipeline;
+
+    final int ID_TAG_OF_INTEREST = 0;
+    final int ID_TAG_OF_INTEREST_2 = 4;
+    final int ID_TAG_OF_INTEREST_3 = 7;
+
+
+
+    static final double FEET_PER_METER = 3.28084;
+
     // Lens intrinsics
     // UNITS ARE PIXELS
     // NOTE: this calibration is for the C920 webcam at 800x448.
     // You will need to do your own calibration for other configurations!
-    double fx = 578.272 / (800.0/320);
-    double fy = 578.272 / (448.0/240);
-    double cx = 402.145 / (800.0/320);
-    double cy = 221.506 / (448.0/240);
+    double fx = 578.272;
+    double fy = 578.272;
+    double cx = 402.145;
+    double cy = 221.506;
 
     // UNITS ARE METERS
-    double tagsize = 0.127;
-    public AprilTagPipeline detector = new AprilTagPipeline(tagsize,fx,fy,cx,cy);
+    final double TAGSIZE = 0.05;
+    private ElapsedTime runtime = new ElapsedTime();
+
+    // Calculate the COUNTS_PER_INCH for your specific drive train.
+    // Go to your motor vendor website to determine your motor's COUNTS_PER_MOTOR_REV
+    // For external drive gearing, set DRIVE_GEAR_REDUCTION as needed.
+    // For example, use a value of 2.0 for a 12-tooth spur gear driving a 24-tooth spur gear.
+    // This is gearing DOWN for less speed and more torque.
+    // For gearing UP, use a gear ratio less than 1.0. Note this will affect the direction of wheel rotation.
+    static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
+    static final double     DRIVE_GEAR_REDUCTION    = 1.5 ;     // No External Gearing. or inverse value
+    // Diameter - 4.0 for mecanum, 4.0 for other
+    static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
+    static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+            (WHEEL_DIAMETER_INCHES * 3.1415);
+    static final double     DRIVE_SPEED             = 0.6;
+    static final double     TURN_SPEED              = 0.5;
+
+
+
+    int parking_zone = 2;
+
+    AprilTagDetection tagOfInterest = null;
+    //Motor Setup
+
+
+    // Reverses the direction of the left motors, to allow a positive motor power to equal
+    // forwards and a negative motor power to equal backwards
+    DcMotor frontRight, frontLeft, backRight, backLeft;
+
+
+
 
     @Override
-    public void runOpMode() {
-        /**
-        //Motors controlled by Game Controller 1
-        DcMotor motorFrontLeft = hardwareMap.dcMotor.get("frontLeft");
-        DcMotor motorBackLeft = hardwareMap.dcMotor.get("backLeft");
-        DcMotor motorFrontRight = hardwareMap.dcMotor.get("frontRight");
-        DcMotor motorBackRight = hardwareMap.dcMotor.get("backRight");
+    public void runOpMode()
+    {
+        backRight = hardwareMap.get(DcMotor.class, "backRight");
+        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
+        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
+        backLeft = hardwareMap.get(DcMotor.class, "backLeft");
 
-        motorFrontLeft.setDirection(DcMotor.Direction.REVERSE);
-        motorBackLeft.setDirection(DcMotor.Direction.REVERSE);
+        frontRight.setDirection(DcMotor.Direction.REVERSE);
+        backRight.setDirection(DcMotor.Direction.REVERSE);
 
-        motorFrontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorFrontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorBackLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorBackRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        //Motors controlled by Game Controller 2
-        DcMotor intakeControl = hardwareMap.dcMotor.get("intakeMotor");
-        DcMotor slideControl = hardwareMap.dcMotor.get("sliderMotor");
-        DcMotor duckControl = hardwareMap.dcMotor.get("duckMotor");
-
-        slideControl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slideControl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-**/
-        DcMotor testMotor = hardwareMap.dcMotor.get("testMotor");
-
-        WebcamName webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
-
-
+        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        OpenCvCamera camera = OpenCvCameraFactory.getInstance().createWebcam(webcamName, cameraMonitorViewId);
+        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        aprilTagDetectionPipeline = new AprilTagPipeline(TAGSIZE, fx, fy, cx, cy);
 
+        camera.setPipeline(aprilTagDetectionPipeline);
         camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
             public void onOpened()
             {
-                camera.setPipeline(detector);
-                camera.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+                camera.startStreaming(800,448, OpenCvCameraRotation.UPRIGHT);
             }
+
             @Override
             public void onError(int errorCode)
             {
-                telemetry.addData("Camera Status", "Failed");
 
-                /*
-                 * This will be called if the camera could not be opened
-                 */
             }
         });
 
+        telemetry.setMsTransmissionInterval(50);
 
+        /*
+         * The INIT-loop:
+         * This REPLACES waitForStart!
+         */
+        while (!isStarted() && !isStopRequested())
+        {
+            ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
 
+            if(currentDetections.size() != 0)
+            {
+                boolean tagFound = false;
 
-
-        waitForStart();
-
-        if (isStopRequested()) return;
-
-        while (opModeIsActive()) {
-
-//            switch (detector.getLocation()) {
-//                case LEFT:
-//                    testMotor.setPower(1);
-//                    break;
-//                case RIGHT:
-//                    testMotor.setPower(-1);
-//                    break;
-//                case NOT_FOUND:
-//                    testMotor.setPower(0);
-//            }
-            camera.stopStreaming();
-/**
-            //Function of Game Controller 1
-            double y = -gamepad1.left_stick_y; // Remember, this is reversed!
-            double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
-            double rx = gamepad1.right_stick_x;
-
-
-            // Denominator is the largest motor power (absolute value) or 1
-            // This ensures all the powers maintain the same ratio, but only when
-            // at least one is out of the range [-1, 1]
-            double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-            double frontLeftPower = (y + x + rx) / denominator;
-            double backLeftPower = (y - x + rx) / denominator;
-            double frontRightPower = (y - x - rx) / denominator;
-            double backRightPower = (y + x - rx) / denominator;
-
-            motorFrontLeft.setPower(frontLeftPower);
-            motorBackLeft.setPower(backLeftPower);
-            motorFrontRight.setPower(frontRightPower);
-            motorBackRight.setPower(backRightPower);
-
-            //Function of Game Controller 2
-            double intakePower = signedSquareRoot((signedSquare(-gamepad2.right_stick_x) + signedSquare(-gamepad2.right_stick_y)));
-            double sliderPower = -gamepad2.left_stick_y;
-
-            if (gamepad2.dpad_down) {
-                slideControl.setTargetPosition(FLOOR);
-                slideControl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                slideControl.setPower(1);
-
-                while(opModeIsActive() && slideControl.isBusy()){
-                    telemetry.addData("Path1", "Running");
-                    telemetry.update();
+                for(AprilTagDetection tag : currentDetections)
+                {
+                    if(tag.id == ID_TAG_OF_INTEREST || tag.id == ID_TAG_OF_INTEREST_2 || tag.id == ID_TAG_OF_INTEREST_3)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
                 }
 
-                slideControl.setPower(0);
-                slideControl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                if(tagFound)
+                {
+                    telemetry.addLine("Tag of interest is in sight!\n\nLocation data:");
+                    tagToTelemetry(tagOfInterest);
+                    telemetry.addLine("Information for Tag of Interest");
 
-            } else if (gamepad2.dpad_left) {
-                slideControl.setTargetPosition(FIRST_LEVEL);
-                slideControl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                slideControl.setPower(1);
+                }
+                else
+                {
+                    telemetry.addLine("Don't see tag of interest :(");
 
-                while(opModeIsActive() && slideControl.isBusy()){
-                    telemetry.addData("Ticks", slideControl.getCurrentPosition());
-                    telemetry.update();
+                    if(tagOfInterest == null)
+                    {
+                        telemetry.addLine("(The tag has never been seen)");
+                    }
+                    else
+                    {
+                        telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
+                        tagToTelemetry(tagOfInterest);
+                    }
                 }
 
-                slideControl.setPower(0);
-                slideControl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            }
+            else
+            {
+                telemetry.addLine("Don't see tag of interest :(");
 
-            } else if (gamepad2.dpad_up) {
-                slideControl.setTargetPosition(SECOND_LEVEL);
-                slideControl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-
-                while(opModeIsActive() && slideControl.isBusy()){
-                    telemetry.addData("Path1", "Running");
-                    telemetry.update();
+                if(tagOfInterest == null)
+                {
+                    telemetry.addLine("(The tag has never been seen)");
                 }
-
-                slideControl.setPower(0);
-                slideControl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-            } else if (gamepad2.dpad_right){
-                slideControl.setTargetPosition(THIRD_LEVEL);
-                slideControl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                slideControl.setPower(1);
-
-                while(opModeIsActive() && slideControl.isBusy()){
-                    telemetry.addData("Path1", "Running");
-                    telemetry.update();
+                else
+                {
+                    telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
+                    tagToTelemetry(tagOfInterest);
                 }
-
-                slideControl.setPower(0);
-                slideControl.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
             }
 
-            if (gamepad2.x) {
-                duckControl.setPower(1);
-            } else if (gamepad2.b) {
-                duckControl.setPower(-1);
-            } else {
-                duckControl.setPower(0);
+            telemetry.update();
+            sleep(20);
+        }
+
+        /*
+         * The START command just came in: now work off the latest snapshot acquired
+         * during the init loop.
+         */
+
+        /* Update the telemetry */
+        if(tagOfInterest != null)
+        {
+            telemetry.addLine("Tag snapshot:\n");
+            if(tagOfInterest.id == 0){
+                parking_zone = 1;
+            }
+            if(tagOfInterest.id == 4){
+                parking_zone = 3;
+            }
+            if(tagOfInterest.id == 7){
+                parking_zone = 2;
+            }
+            tagToTelemetry(tagOfInterest,parking_zone);
+            telemetry.update();
+        }
+        else
+        {
+            telemetry.addLine("No tag snapshot available, it was never sighted during the init loop :(");
+
+            telemetry.update();
+        }
+
+        /* Actually do something useful */
+        if(tagOfInterest == null)
+        {
+            /*
+             * Insert your autonomous code here, presumably running some default configuration
+             * since the tag was never sighted during INIT
+             */
+        }
+        else
+        {
+            if (parking_zone == 1){
+                encoderDrive(DRIVE_SPEED,14,-14, -14,14, 2);
+            }
+            if (parking_zone == 2){
+                encoderDrive(DRIVE_SPEED,6,6,6,6,2);
+            }
+            if (parking_zone == 3){
+                encoderDrive(DRIVE_SPEED,-14,14, 14,-14, 2);
+            }
+        }
+
+
+        /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
+    }
+
+    void tagToTelemetry(AprilTagDetection detection, int parking_zone)
+    {
+        telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
+        telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
+        telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
+        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
+        telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
+        telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
+        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
+        telemetry.addData("Current Parking Zone: ", parking_zone);
+
+    }
+    void tagToTelemetry(AprilTagDetection detection)
+    {
+        telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
+        telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
+        telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
+        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
+        telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
+        telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
+        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
+
+    }
+
+    public void encoderDrive(double speed,
+                             double leftInches, double rightInches,
+                             double backLeftInches, double backRightInches,
+                             double timeoutS) {
+        int newLeftTarget;
+        int newRightTarget;
+        int newBackRightTarget;
+        int newBackLeftTarget;
+
+        // Ensure that the opmode is still active
+        if (opModeIsActive()) {
+
+            // Determine new target position, and pass to motor controller
+            newLeftTarget = frontLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
+            newRightTarget = frontRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
+            newBackLeftTarget = backLeft.getCurrentPosition() + (int)(backLeftInches * COUNTS_PER_INCH);
+            newBackRightTarget = backRight.getCurrentPosition() + (int)(backRightInches * COUNTS_PER_INCH);
+
+            frontLeft.setTargetPosition(newLeftTarget);
+            frontRight.setTargetPosition(newRightTarget);
+            backLeft.setTargetPosition(newBackLeftTarget);
+            backRight.setTargetPosition(newBackRightTarget);
+
+            // Turn On RUN_TO_POSITION
+            frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            // reset the timeout time and start motion.
+            runtime.reset();
+            frontLeft.setPower(Math.abs(speed));
+            frontRight.setPower(Math.abs(speed));
+            backLeft.setPower(Math.abs(speed));
+            backRight.setPower(Math.abs(speed));
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+            while (opModeIsActive() &&
+                    (runtime.seconds() < timeoutS) &&
+                    (frontLeft.isBusy() && frontRight.isBusy() && backLeft.isBusy() && backRight.isBusy())) {
+
+                // Display it for the driver.
+                telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
+                telemetry.addData("Currently at",  " at %7d :%7d",
+                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
+                telemetry.update();
             }
 
-            intakeControl.setPower(intakePower);
-            //slideControl.setPower(sliderPower);
-            telemetry.addData("right", gamepad2.dpad_right);
-            telemetry.addData("up", gamepad2.dpad_up);
-            telemetry.addData("left", gamepad2.dpad_left);
-            telemetry.addData("down", gamepad2.dpad_down);
+            // Stop all motion;
+            frontLeft.setPower(0);
+            frontRight.setPower(0);
+            backLeft.setPower(0);
+            backRight.setPower(0);
 
-            telemetry.update(); DELETE THIS
- */
+            // Turn off RUN_TO_POSITION
+            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            sleep(250);   // optional pause after each move.
         }
+
     }
-
-    public double signedSquare(double num) {
-        if (num > 0) {
-            return (num*num);
-        }
-        else {
-            return (-1*num*num);
-        }
-    }
-
-    public double signedSquareRoot (double num) {
-        if (num > 0) {
-            return (Math.pow(num, 0.5));
-        } else {
-            return (-Math.pow(-num, 0.5));
-        }
-    }
-
 }

@@ -13,6 +13,10 @@ public class TileRunner extends LinearOpMode {
     protected DcMotor backRight;
     protected DcMotor frontLeft;
     protected DcMotor backLeft;
+    protected DcMotor slides;
+
+    final int[] LEVELS = {0,(1120/36),1000,1500};
+    int current_level = 0;
 
     @Override
     public void runOpMode() {
@@ -22,6 +26,11 @@ public class TileRunner extends LinearOpMode {
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
+        slides = hardwareMap.get(DcMotor.class, "motorSlide");
+
+        slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
 
         // Reverses the direction of the left motors, to allow a positive motor power to equal
         // forwards and a negative motor power to equal backwards
@@ -45,12 +54,42 @@ public class TileRunner extends LinearOpMode {
             double leftTgtPower = -this.gamepad1.left_stick_y;
             double rightTgtPower = -this.gamepad1.right_stick_y;
 
+            if (gamepad2.dpad_up || current_level == 10){
+                if(current_level < LEVELS.length -1)  {
+                    current_level++;
+                }
+                slides.setTargetPosition(LEVELS[current_level]);
+                slides.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            }
+            else if (gamepad2.dpad_down || current_level == 10){
+                if(current_level > 0) {
+                    current_level--;
+                }
+                slides.setTargetPosition(LEVELS[current_level]);
+                slides.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            }
+            else if (Math.abs(gamepad2.left_stick_y) > 0){
+                slides.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                slides.setPower(negSqrt(gamepad2.left_stick_y)/2.0);
+            }
+            else{
+                slides.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                slides.setPower(0);
+            }
+
+
+
+
             // Uses the current position of the joy-sticks and makes the motors move at the
             // respective speed
             frontLeft.setPower(leftTgtPower);
             backLeft.setPower(leftTgtPower);
             frontRight.setPower(rightTgtPower);
             backRight.setPower(rightTgtPower);
+
 
             // Makes the Driver Hub output the message
             // Left Target Power: A float from [-1,1]
@@ -63,12 +102,23 @@ public class TileRunner extends LinearOpMode {
             telemetry.addData("Front Left Motor Power", frontLeft.getPower());
             telemetry.addData("Back Right Motor Power", backRight.getPower());
             telemetry.addData("Back Left Motor Power", backLeft.getPower());
+            telemetry.addData("Slider Power", slides.getPower());
+
 
 
             // Status: Running
             telemetry.addData("Status", "Running");
             telemetry.update();
 
+        }
+
+    }
+    public static double negSqrt(double value){
+        if(value >= 0){
+            return Math.sqrt(value);
+        }
+        else{
+            return -1 * Math.sqrt((-1*value));
         }
     }
 }
