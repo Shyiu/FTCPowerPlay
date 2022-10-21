@@ -68,7 +68,7 @@ public class TileRunnerAuto extends LinearOpMode
     // This is gearing DOWN for less speed and more torque.
     // For gearing UP, use a gear ratio less than 1.0. Note this will affect the direction of wheel rotation.
     static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
-    static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // No External Gearing.
+    static final double     DRIVE_GEAR_REDUCTION    = .25 ;     // No External Gearing.
     // Diameter - 4.0 for mecanum, 4.0 for other
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
@@ -105,6 +105,11 @@ public class TileRunnerAuto extends LinearOpMode
 
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
+
+        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -236,24 +241,20 @@ public class TileRunnerAuto extends LinearOpMode
         }
         else
         {
-            encoderDrive(DRIVE_SPEED, 4,4,2);
-            turnLeft(DRIVE_SPEED);
-            encoderDrive(DRIVE_SPEED, 12,12,2);
-            //add slide anc claw here
-            turnRight(DRIVE_SPEED);
-            encoderDrive(DRIVE_SPEED, 36, 36,2);
-            turnRight(DRIVE_SPEED);
-            //drop off claw and reset slides
-            turnRight(DRIVE_SPEED);
-            encoderDrive(DRIVE_SPEED,12,12 ,2);
-            turnLeft(DRIVE_SPEED);
-            if (parking_zone == 2){
-                encoderDrive(DRIVE_SPEED,24,24,2);
-            }
-            if (parking_zone == 3){
-
-                encoderDrive(DRIVE_SPEED, 48, 48, 2);
-            }
+            encoderDrive(DRIVE_SPEED, -1,-1,2);
+//            turnRight(DRIVE_SPEED);
+//            //add slide and claw here
+//            turnLeft(DRIVE_SPEED);
+//            encoderDrive(DRIVE_SPEED, -12,-12,2);
+//            //add slide anc claw here
+//            turnRight(DRIVE_SPEED);
+//            if (parking_zone == 1){
+//                encoderDrive(DRIVE_SPEED,24,24,2);
+//            }
+//            if (parking_zone == 3){
+//
+//                encoderDrive(DRIVE_SPEED, -24, -24, 2);
+//            }
         }
 
 
@@ -288,7 +289,7 @@ public class TileRunnerAuto extends LinearOpMode
         int newRightTarget;
         int newBackRightTarget;
         int newBackLeftTarget;
-        double leftInches = 5, rightInches = -5;
+        double leftInches = 16, rightInches = -16;
         int timeoutS = 2;
         // Ensure that the opmode is still active
         if (opModeIsActive()) {
@@ -354,7 +355,7 @@ public class TileRunnerAuto extends LinearOpMode
         int newRightTarget;
         int newBackRightTarget;
         int newBackLeftTarget;
-        double leftInches = -5, rightInches = 5;
+        double leftInches = -16, rightInches = 16;
         int timeoutS = 2;
         // Ensure that the opmode is still active
         if (opModeIsActive()) {
