@@ -8,10 +8,10 @@ import com.qualcomm.robotcore.hardware.Servo;
 @TeleOp(name="Servo Testing", group="Testing")
 public class Testing extends LinearOpMode {
     Servo testingServo;
-    Boolean a;
-    Boolean b;
-    Boolean y;
-    Boolean x;
+    Boolean a;//changes servo position by -0.1
+    Boolean b;//changes servo position by -0.01
+    Boolean y;//changes servo position by  0.01
+    Boolean x;//changes servo position by  0.1
 
 
     @Override
