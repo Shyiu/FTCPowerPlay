@@ -31,7 +31,7 @@ public class ManualMecanumDrive extends LinearOpMode {
         motorBackLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motorBackRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        //Motors controlled by Game Controller 1
+        //Motors controlle by Game Controller 1
         DcMotor armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
         DcMotorSimple armJoint2 = hardwareMap.get(DcMotorSimple.class, "joint_servo");
         Servo claw = hardwareMap.get(Servo.class, "claw_servo");
