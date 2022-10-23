@@ -70,12 +70,12 @@ public class TileRunnerAuto extends LinearOpMode
     static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
     //35:45 = 3.72 ft/s 40:40 = 2.88 ft/s 45:35 = 2.26 ft/s  (0.25 initially)
     //we need to figure out exact gear ratio without trial and error
-    static final double     DRIVE_GEAR_REDUCTION    = 45.0/35 ;     // No External Gearing.
+    static final double     DRIVE_GEAR_REDUCTION    = 1 ;     // No External Gearing.
     // Diameter - 4.0 for mecanum, 4.0 for other
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
-    static final double     DRIVE_SPEED             = 0.6;
+    static final double     DRIVE_SPEED             = 0.03;
     static final double     TURN_SPEED              = 0.5;
 
 
@@ -240,10 +240,11 @@ public class TileRunnerAuto extends LinearOpMode
              * Insert your autonomous code here, presumably running some default configuration
              * since the tag was never sighted during INIT
              */
+
         }
         else
         {
-            encoderDrive(DRIVE_SPEED, -1,-1,2);
+            encoderDrive(DRIVE_SPEED, -12,-12,2);
 //            turnRight(DRIVE_SPEED);
 //            //add slide and claw here
 //            turnLeft(DRIVE_SPEED);
