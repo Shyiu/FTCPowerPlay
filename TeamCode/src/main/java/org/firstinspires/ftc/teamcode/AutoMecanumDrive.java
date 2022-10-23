@@ -246,7 +246,7 @@ public class AutoMecanumDrive extends LinearOpMode
              * Insert your autonomous code here, presumably running some default configuration
              * since the tag was never sighted during INIT
              */
-            moveArm(.2,Math.round(1120*1.2));
+            moveArm(.2,Math.round(1120*1.2));//test numbers
             /*encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 2);
             sleep(250);
             strafeLeft(DRIVE_SPEED, 12);*/
