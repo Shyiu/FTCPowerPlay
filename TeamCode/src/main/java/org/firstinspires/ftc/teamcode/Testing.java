@@ -18,15 +18,17 @@ public class Testing extends LinearOpMode {
     public void runOpMode(){
         telemetry.addLine("Gamepad1 Controls:\nx:0.1\ny:0.01\n:a:-0.1\nb:-0.01");
         telemetry.update();
-        testingServo = hardwareMap.get(Servo.class, "servo_one"); //change name to servo that is being tested.
-        a = gamepad1.a;
-        b = gamepad1.b;
-        x = gamepad1.y;
-        y = gamepad1.x;
+        testingServo = hardwareMap.get(Servo.class, "claw_servo");//change name to servo that is being tested.
+
         waitForStart();
         while (opModeIsActive() && !isStopRequested()){
+            a = gamepad1.a;
+            b = gamepad1.b;
+            x = gamepad1.y;
+            y = gamepad1.x;
             if(a){
                 testingServo.setPosition(testingServo.getPosition() - .1);
+                sleep(1000);
                 while(!a){
                     sleep(500);
                 }
@@ -34,6 +36,7 @@ public class Testing extends LinearOpMode {
             }
             if(b){
                 testingServo.setPosition(testingServo.getPosition() - .01);
+                sleep(1000);
                 while(!b){
                     sleep(500);
                 }
@@ -41,6 +44,7 @@ public class Testing extends LinearOpMode {
             }
             if(x){
                 testingServo.setPosition(testingServo.getPosition() + .1);
+                sleep(1000);
                 while(!x){
                     sleep(500);
                 }
@@ -48,11 +52,13 @@ public class Testing extends LinearOpMode {
             }
             if(y){
                 testingServo.setPosition(testingServo.getPosition() + .01);
+                sleep(1000);
                 while(!y){
                     sleep(500);
                 }
 
             }
+            telemetry.addLine("Gamepad1 Controls:\nx:0.1\ny:0.01\n:a:-0.1\nb:-0.01");
             telemetry.addData("Servo Position", testingServo.getPosition());
             telemetry.update();
         }

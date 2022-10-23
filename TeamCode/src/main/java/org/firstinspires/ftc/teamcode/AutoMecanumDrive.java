@@ -24,7 +24,6 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -88,7 +87,7 @@ public class AutoMecanumDrive extends LinearOpMode
 
     // Reverses the direction of the left motors, to allow a positive motor power to equal
     // forwards and a negative motor power to equal backwards
-    DcMotor frontRight, frontLeft, backRight, backLeft;
+    DcMotor frontRight, frontLeft, backRight, backLeft, armJoint1;
 
 
 
@@ -111,14 +110,16 @@ public class AutoMecanumDrive extends LinearOpMode
 
         Servo armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
         Servo claw = hardwareMap.get(Servo.class, "claw_servo");
-        DcMotor armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
+        armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
 
         armJoint1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        double clawOpen = .16;
-        double clawClose = -0.5;
+        armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        double clawOpen = 0;
+        double clawClose = 1;
         double lockJoint2 = 0;
 
-
+        armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -245,9 +246,10 @@ public class AutoMecanumDrive extends LinearOpMode
              * Insert your autonomous code here, presumably running some default configuration
              * since the tag was never sighted during INIT
              */
-            encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 2);
+            moveArm(.2,Math.round(1120*1.2));
+            /*encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 2);
             sleep(250);
-            strafeLeft(DRIVE_SPEED, 12);
+            strafeLeft(DRIVE_SPEED, 12);*/
 //          arm/slides code
 
             //strafeRight(DRIVE_SPEED, 12);
@@ -255,6 +257,7 @@ public class AutoMecanumDrive extends LinearOpMode
         else
         {
             encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 2);
+
             //strafeLeft(DRIVE_SPEED, 16);
             //Arm/Slides code
             //if (parking_zone == 1){
@@ -270,7 +273,6 @@ public class AutoMecanumDrive extends LinearOpMode
         }
 
 
-        /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
     }
 
     void tagToTelemetry(AprilTagDetection detection, int parking_zone)
@@ -295,6 +297,22 @@ public class AutoMecanumDrive extends LinearOpMode
         telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
         telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
 
+    }
+    public void moveArm(double speed, double ticks){
+        if (opModeIsActive()){
+            armJoint1.setTargetPosition(Math.round((float)ticks));
+            armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armJoint1.setPower(speed);
+            runtime.reset();
+            while(opModeIsActive() && armJoint1.isBusy()){
+                telemetry.addData("Arm Position", armJoint1.getCurrentPosition());
+                telemetry.update();
+            }
+
+            armJoint1.setPower(0);
+            armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        }
     }
     public void strafeRight(double speed, double inches) {
         int newLeftTarget;
