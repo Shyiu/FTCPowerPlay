@@ -21,6 +21,7 @@ public class Testing extends LinearOpMode {
         testingServo = hardwareMap.get(Servo.class, "claw_servo");//change name to servo that is being tested.
 
         waitForStart();
+
         while (opModeIsActive() && !isStopRequested()){
             a = gamepad1.a;
             b = gamepad1.b;

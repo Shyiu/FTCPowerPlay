@@ -58,6 +58,7 @@ public class AutoMecanumDrive extends LinearOpMode
     double cx = 402.145;
     double cy = 221.506;
 
+
     // UNITS ARE METERS
     final double TAGSIZE = 0.05;
     private ElapsedTime runtime = new ElapsedTime();
@@ -117,7 +118,10 @@ public class AutoMecanumDrive extends LinearOpMode
 
         double clawOpen = 0;
         double clawClose = 1;
+        double armUp = 1;
+        double armDown = 0;
         double lockJoint2 = 0;
+
 
         armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -209,6 +213,7 @@ public class AutoMecanumDrive extends LinearOpMode
 
             sleep(20);
             claw.setPosition(clawClose);
+            armJoint2.setPosition(armUp);
         }
 
         /*
@@ -246,30 +251,41 @@ public class AutoMecanumDrive extends LinearOpMode
              * Insert your autonomous code here, presumably running some default configuration
              * since the tag was never sighted during INIT
              */
-            moveArm(.2,Math.round(1120*1.2));//test numbers
-            /*encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 2);
+
+            encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 2);
             sleep(250);
-            strafeLeft(DRIVE_SPEED, 12);*/
+            moveArm(0.06,0.8);//test numbers
+            sleep(250);
+            armJoint2.setPosition(armDown);
+            strafeLeft(DRIVE_SPEED, 12);
+            claw.setPosition(clawOpen);
+
+
 //          arm/slides code
+
 
             //strafeRight(DRIVE_SPEED, 12);
         }
+
         else
         {
             encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 2);
-
-            //strafeLeft(DRIVE_SPEED, 16);
+            sleep(250);
+            moveArm(.2,Math.round(1120*0.4));
+            sleep(250);
+            encoderDrive(DRIVE_SPEED, -24,24, 24, -24, 2);
+            claw.setPosition(clawOpen);
             //Arm/Slides code
-            //if (parking_zone == 1){
-                //strafeLeft(DRIVE_SPEED,12);
-            //}
-            //if (parking_zone == 2){
-                //strafeRight(DRIVE_SPEED, 12);
+            if (parking_zone == 1){
+                strafeLeft(DRIVE_SPEED,12);
+            }
+            if (parking_zone == 2){
+                strafeRight(DRIVE_SPEED, 12);
 
-            //}
-            //if (parking_zone == 3){
-                //strafeRight(DRIVE_SPEED, 36);
-            //}
+            }
+            if (parking_zone == 3){
+                strafeRight(DRIVE_SPEED, 36);
+            }
         }
 
 
@@ -298,19 +314,24 @@ public class AutoMecanumDrive extends LinearOpMode
         telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
 
     }
-    public void moveArm(double speed, double ticks){
+    public void moveArm(double speed, double inches){ //inches was originally ticks
         if (opModeIsActive()){
-            armJoint1.setTargetPosition(Math.round((float)ticks));
+            int armTarget;
+            int timeoutS = 2;
+            armTarget = armJoint1.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
+            armJoint1.setTargetPosition(armTarget); //originally Math.round((float)ticks))
             armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            armJoint1.setPower(speed);
             runtime.reset();
-            while(opModeIsActive() && armJoint1.isBusy()){
+            armJoint1.setPower(Math.abs(speed));
+            while(opModeIsActive() && (runtime.seconds() < timeoutS) && armJoint1.isBusy()){
                 telemetry.addData("Arm Position", armJoint1.getCurrentPosition());
                 telemetry.update();
             }
 
             armJoint1.setPower(0);
-            armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+            sleep(250);
 
         }
     }
@@ -324,10 +345,10 @@ public class AutoMecanumDrive extends LinearOpMode
         if (opModeIsActive()) {
 
             // Determine new target position, and pass to motor controller
-            newLeftTarget = frontLeft.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
-            newRightTarget = frontRight.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
+            newLeftTarget = frontLeft.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH/2);
+            newRightTarget = frontRight.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH/2);
+            newBackLeftTarget = backLeft.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH/2);
+            newBackRightTarget = backRight.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH/2);
 
             frontLeft.setTargetPosition(newLeftTarget);
             frontRight.setTargetPosition(newRightTarget);
@@ -389,10 +410,10 @@ public class AutoMecanumDrive extends LinearOpMode
         if (opModeIsActive()) {
 
             // Determine new target position, and pass to motor controller
-            newLeftTarget = frontLeft.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH / 2);
-            newRightTarget = frontRight.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH / 2);
-            newBackLeftTarget = backLeft.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH / 2);
-            newBackRightTarget = backRight.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH / 2);
+            newLeftTarget = frontLeft.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH/2);
+            newRightTarget = frontRight.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH/2);
+            newBackLeftTarget = backLeft.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH/2);
+            newBackRightTarget = backRight.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH/2);
 
             frontLeft.setTargetPosition(newLeftTarget);
             frontRight.setTargetPosition(newRightTarget);
