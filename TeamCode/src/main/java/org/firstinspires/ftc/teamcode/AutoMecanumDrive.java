@@ -255,11 +255,11 @@ public class AutoMecanumDrive extends LinearOpMode
 
             encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 1.5);
             sleep(250);
-            moveArm(0.1,1.5);//test numbers
+            moveArm(0.1,1.5);//falls back into the hardstop
  //           sleep(250);
             armJoint2.setPosition(armDown);
-            strafeLeft(DRIVE_SPEED, 12);
-            moveArm(.1,-1);
+            strafeLeft(DRIVE_SPEED, 13);//1 inch too far to correct for bad wheel (Not tested)
+            moveArm(.05,-.75);//-.75 is a guess. -1 seemed to work as well.
             claw.setPosition(clawOpen);
             sleep(1000);
 
@@ -330,7 +330,7 @@ public class AutoMecanumDrive extends LinearOpMode
                 telemetry.addData("Arm Position", armJoint1.getCurrentPosition());
                 telemetry.addData("Run Time", getRuntime());
                 telemetry.update();
-                if (getRuntime() > 7.5 + currentRunTime){
+                if (getRuntime() > 5 + currentRunTime){//experiment with the time to find the ideal setting. only included because the arm will fall after its center of gravity passes the center.
                     armJoint1.setTargetPosition(armJoint1.getCurrentPosition());
                     break;
                 }
