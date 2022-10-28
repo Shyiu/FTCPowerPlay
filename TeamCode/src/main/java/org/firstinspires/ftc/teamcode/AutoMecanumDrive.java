@@ -88,6 +88,7 @@ public class AutoMecanumDrive extends LinearOpMode
 
     // Reverses the direction of the left motors, to allow a positive motor power to equal
     // forwards and a negative motor power to equal backwards
+    //initialize motors
     DcMotor frontRight, frontLeft, backRight, backLeft, armJoint1;
 
 

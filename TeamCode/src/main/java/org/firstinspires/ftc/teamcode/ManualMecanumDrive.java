@@ -8,7 +8,10 @@ import com.qualcomm.robotcore.hardware.Servo;
 @TeleOp(name = "Manual Mecanum Drive", group = "Mecanum Code")
 public class ManualMecanumDrive extends LinearOpMode {
 
+
+    //initialize motors
     DcMotor frontRight, frontLeft, backRight, backLeft, armJoint1;
+
     @Override
     public void runOpMode() {
 
