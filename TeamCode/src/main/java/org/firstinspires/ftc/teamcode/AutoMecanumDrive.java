@@ -252,19 +252,20 @@ public class AutoMecanumDrive extends LinearOpMode
              * since the tag was never sighted during INIT
              */
 
-            encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 2);
+            encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 1.5);
             sleep(250);
-            moveArm(0.06,0.8);//test numbers
-            sleep(250);
+            moveArm(0.1,1.5);//test numbers
+ //           sleep(250);
             armJoint2.setPosition(armDown);
             strafeLeft(DRIVE_SPEED, 12);
+            moveArm(.1,-1);
             claw.setPosition(clawOpen);
-
+            sleep(1000);
 
 //          arm/slides code
 
 
-            //strafeRight(DRIVE_SPEED, 12);
+//            strafeRight(DRIVE_SPEED, 12);
         }
 
         else
@@ -316,23 +317,25 @@ public class AutoMecanumDrive extends LinearOpMode
     }
     public void moveArm(double speed, double inches){ //inches was originally ticks
         if (opModeIsActive()){
+            double currentRunTime;
             int armTarget;
-            int timeoutS = 2;
             armTarget = armJoint1.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
             armJoint1.setTargetPosition(armTarget); //originally Math.round((float)ticks))
-            armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             runtime.reset();
+            armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            currentRunTime = getRuntime();
             armJoint1.setPower(Math.abs(speed));
-            while(opModeIsActive() && (runtime.seconds() < timeoutS) && armJoint1.isBusy()){
+            while((opModeIsActive() && armJoint1.isBusy())){
                 telemetry.addData("Arm Position", armJoint1.getCurrentPosition());
+                telemetry.addData("Run Time", getRuntime());
                 telemetry.update();
+                if (getRuntime() > 7.5 + currentRunTime){
+                    armJoint1.setTargetPosition(armJoint1.getCurrentPosition());
+                    break;
+                }
             }
-
             armJoint1.setPower(0);
-
-
-            sleep(250);
-
+            armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
     }
     public void strafeRight(double speed, double inches) {

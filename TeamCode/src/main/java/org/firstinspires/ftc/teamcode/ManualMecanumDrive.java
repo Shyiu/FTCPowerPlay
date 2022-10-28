@@ -3,12 +3,12 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp(name = "Manual Mecanum Drive", group = "Mecanum Code")
 public class ManualMecanumDrive extends LinearOpMode {
 
+    DcMotor frontRight, frontLeft, backRight, backLeft, armJoint1;
     @Override
     public void runOpMode() {
 
@@ -18,22 +18,27 @@ public class ManualMecanumDrive extends LinearOpMode {
 
 
         //Motors controlled by Game Controller 1
-        DcMotor motorFrontRight = hardwareMap.get(DcMotor.class, MecanumHardware.fr);
-        DcMotor motorFrontLeft = hardwareMap.get(DcMotor.class, MecanumHardware.fl);
-        DcMotor motorBackRight = hardwareMap.get(DcMotor.class, MecanumHardware.br);
-        DcMotor motorBackLeft = hardwareMap.get(DcMotor.class, MecanumHardware.bl);
+        backRight = hardwareMap.get(DcMotor.class, "backRight");
+        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
+        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
+        backLeft = hardwareMap.get(DcMotor.class, "backLeft");
 
-        motorFrontLeft.setDirection(DcMotor.Direction.REVERSE);
-        motorBackLeft.setDirection(DcMotor.Direction.REVERSE);
+        //DcMotor motorFrontRight = hardwareMap.get(DcMotor.class, MecanumHardware.fr);
+        //DcMotor motorFrontLeft = hardwareMap.get(DcMotor.class, MecanumHardware.fl);
+        //DcMotor motorBackRight = hardwareMap.get(DcMotor.class, MecanumHardware.br);
+        //DcMotor motorBackLeft = hardwareMap.get(DcMotor.class, MecanumHardware.bl);
 
-        motorFrontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorFrontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorBackLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorBackRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         //Motors controlle by Game Controller 1
         DcMotor armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
-        DcMotorSimple armJoint2 = hardwareMap.get(DcMotorSimple.class, "joint_servo");
+        Servo armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
         Servo claw = hardwareMap.get(Servo.class, "claw_servo");
 
         armJoint1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -90,20 +95,20 @@ public class ManualMecanumDrive extends LinearOpMode {
 
 
 
-            motorFrontLeft.setPower(frontLeftPower);
-            motorBackLeft.setPower(backLeftPower);
-            motorFrontRight.setPower(frontRightPower);
-            motorBackRight.setPower(backRightPower);
+            frontLeft.setPower(frontLeftPower);
+            backLeft.setPower(backLeftPower);
+            frontRight.setPower(frontRightPower);
+            backRight.setPower(backRightPower);
 
             //Function of Game Controller 2
 
 
             armJoint1.setPower(Math.pow(y2,2));
             if (Math.abs(y2) > 0.25){
-                armJoint2.setPower(armJoint2.getPower()-(y2/10.0));
+                armJoint2.setPosition(armJoint2.getPosition()-(y2/10.0));
             }
             else{
-                armJoint2.setPower(joint2Position);
+                armJoint2.setPosition(joint2Position);
             }
 
             claw.setDirection(direction);

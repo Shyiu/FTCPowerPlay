@@ -73,7 +73,7 @@ public class TileRunner extends LinearOpMode {
             }
             else if (Math.abs(gamepad2.left_stick_y) > 0){
                 slides.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                slides.setPower(negSqrt(gamepad2.left_stick_y)/2.0);
+                slides.setPower(-1*(negSqrt(gamepad2.left_stick_y)/2.0));
             }
             else{
                 slides.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
