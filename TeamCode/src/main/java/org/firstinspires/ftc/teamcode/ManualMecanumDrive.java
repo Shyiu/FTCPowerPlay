@@ -99,7 +99,7 @@ public class ManualMecanumDrive extends LinearOpMode {
             if((gamepad2.left_trigger) > 0){
                 armJoint2CurrentPos = armJoint2.getPosition();
                 if (armJoint2CurrentPos + .1 <= armJoint2Max){
-                     armJoint2CurrentPos += .1;
+                    armJoint2CurrentPos += .1;
                 }
                 else{
                     armJoint2CurrentPos = armJoint2Max;
@@ -137,7 +137,7 @@ public class ManualMecanumDrive extends LinearOpMode {
 
 
         }
-        }
+    }
 
 
     public double signedSquare(double num) {
