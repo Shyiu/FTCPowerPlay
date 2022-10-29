@@ -269,7 +269,6 @@ public class AutoMecanumDrive extends LinearOpMode
 //          arm/slides code
 
 
-//            strafeRight(DRIVE_SPEED, 12);
         }
 
         else
