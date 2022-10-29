@@ -35,8 +35,8 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Mecanum Auto", group = "Mecanum Autonomous")
-public class AutoMecanumDrive extends LinearOpMode
+@Autonomous(name = "Mecanum Auto Left", group = "Mecanum Autonomous")
+public class AutoMecanumDriveLeft extends LinearOpMode
 {
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
@@ -105,6 +105,7 @@ public class AutoMecanumDrive extends LinearOpMode
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
 
+
         frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -114,6 +115,7 @@ public class AutoMecanumDrive extends LinearOpMode
         Servo claw = hardwareMap.get(Servo.class, "claw_servo");
         armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
 
+        armJoint1.setDirection(DcMotor.Direction.REVERSE);
         armJoint1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -255,14 +257,12 @@ public class AutoMecanumDrive extends LinearOpMode
 
             encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 1.5);
             sleep(250);
-            moveArm(0.1,1);//falls back into the hardstop
+            moveArm(0.06,.6);//falls back into the hardstop
             sleep(250);
-            strafeLeft(DRIVE_SPEED, 13);//1 inch too far to correct for bad wheel (Not tested)
+            strafeRight(DRIVE_SPEED, 13);//1 inch too far to correct for bad wheel (Not tested)
             armJoint2.setPosition(armDown);
-            moveArm(.05,-.75);//-.75 is a guess. -1 seemed to work as well.
             claw.setPosition(clawOpen);
-            moveArm(.05, 1); //fall back into hardstop
-            strafeRight(DRIVE_SPEED,36);
+            strafeLeft(DRIVE_SPEED,36);
             encoderDrive(DRIVE_SPEED, 24, 24, 24, 24, 1.5);
             sleep(1000);
 
@@ -277,21 +277,21 @@ public class AutoMecanumDrive extends LinearOpMode
             sleep(250);
             moveArm(0.1,1);//falls back into the hardstop
             sleep(250);
-            strafeLeft(DRIVE_SPEED, 13);//1 inch too far to correct for bad wheel (Not tested)
+            strafeRight(DRIVE_SPEED, 13);//1 inch too far to correct for bad wheel (Not tested)
             armJoint2.setPosition(armDown);
             moveArm(.05,-.75);//-.75 is a guess. -1 seemed to work as well.
             claw.setPosition(clawOpen);
             moveArm(.05, 1); //fall back into hardstop
             //Arm/Slides code
             if (parking_zone == 1){
-                strafeLeft(DRIVE_SPEED,12);
+                strafeRight(DRIVE_SPEED,12);
             }
             if (parking_zone == 2){
-                strafeRight(DRIVE_SPEED, 12);
+                strafeLeft(DRIVE_SPEED, 12);
 
             }
             if (parking_zone == 3){
-                strafeRight(DRIVE_SPEED, 36);
+                strafeLeft(DRIVE_SPEED, 36);
             }
         }
 

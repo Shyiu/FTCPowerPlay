@@ -52,6 +52,7 @@ public class ManualMecanumDrive extends LinearOpMode {
         double armDown = 0;
         double armJoint2Max = 1;
         double armJoint2Min = 0;
+        double armJoint2Increment = .05;
         double y,x,rx,y2;
         double denominator,frontLeftPower,backLeftPower,frontRightPower,backRightPower;
         double incrementWait = .5;
@@ -93,13 +94,11 @@ public class ManualMecanumDrive extends LinearOpMode {
             backRight.setPower(backRightPower);
 
             //Function of Game Controller 2
-
-
-            armJoint1.setPower(Math.pow(y2,2));
+            armJoint1.setPower(signedSquare(y2));
             if((gamepad2.left_trigger) > 0){
                 armJoint2CurrentPos = armJoint2.getPosition();
-                if (armJoint2CurrentPos + .1 <= armJoint2Max){
-                    armJoint2CurrentPos += .1;
+                if (armJoint2CurrentPos + armJoint2Increment <= armJoint2Max){
+                    armJoint2CurrentPos += armJoint2Increment;
                 }
                 else{
                     armJoint2CurrentPos = armJoint2Max;
@@ -107,12 +106,12 @@ public class ManualMecanumDrive extends LinearOpMode {
 
                 incrementWait = 1.001 - gamepad2.left_trigger;
                 armJoint2.setPosition(armJoint2CurrentPos);
-                sleep((long)(incrementWait*1000));
+                sleep((long)(incrementWait*900));
             }
             else if((gamepad2.right_trigger) > 0){
                 armJoint2CurrentPos = armJoint2.getPosition();
-                if (armJoint2CurrentPos - .1 >= armJoint2Min){
-                    armJoint2CurrentPos -= .1;
+                if (armJoint2CurrentPos - armJoint2Increment >= armJoint2Min){
+                    armJoint2CurrentPos -= armJoint2Increment;
                 }
                 else{
                     armJoint2CurrentPos = armJoint2Min;
@@ -120,7 +119,7 @@ public class ManualMecanumDrive extends LinearOpMode {
 
                 incrementWait = 1.001 - gamepad2.right_trigger;
                 armJoint2.setPosition(armJoint2CurrentPos);
-                sleep((long)(incrementWait*1000));
+                sleep((long)(incrementWait*900));
             }
 
 
