@@ -240,11 +240,11 @@ public class TileRunnerAuto extends LinearOpMode
              * Insert your autonomous code here, presumably running some default configuration
              * since the tag was never sighted during INIT
              */
-
+            encoderDrive(DRIVE_SPEED, -12,-12,2);
         }
         else
         {
-            encoderDrive(DRIVE_SPEED, -12,-12,2);
+
 //            turnRight(DRIVE_SPEED);
 //            //add slide and claw here
 //            turnLeft(DRIVE_SPEED);
