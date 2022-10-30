@@ -35,7 +35,8 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Mecanum Auto Right", group = "Mecanum Autonomous")
+@Autonomous(name = "Mecanum Auto Right" +
+        "", group = "Mecanum Autonomous")
 public class AutoMecanumDriveRight extends LinearOpMode
 {
     OpenCvCamera camera;
