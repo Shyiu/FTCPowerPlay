@@ -59,6 +59,7 @@ public class AutoMecanumDriveLeft extends LinearOpMode
     double cy = 221.506;
 
 
+
     // UNITS ARE METERS
     final double TAGSIZE = 0.05;
     private ElapsedTime runtime = new ElapsedTime();
@@ -72,6 +73,7 @@ public class AutoMecanumDriveLeft extends LinearOpMode
     static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
     static final double     DRIVE_GEAR_REDUCTION    = 1.5 ;     // No External Gearing. or inverse value
     // Diameter - 4.0 for mecanum, 4.0 for other
+
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);

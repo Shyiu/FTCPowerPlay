@@ -20,6 +20,7 @@ public class ManualMecanumDrive extends LinearOpMode {
 
 
 
+
         //Motors controlled by Game Controller 1
         backRight = hardwareMap.get(DcMotor.class, "backRight");
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
@@ -57,6 +58,8 @@ public class ManualMecanumDrive extends LinearOpMode {
         double denominator,frontLeftPower,backLeftPower,frontRightPower,backRightPower;
         double incrementWait = .5;
         double armJoint2CurrentPos = armJoint2.getPosition();
+        double armJoint1CurrentPos = armJoint1.getCurrentPosition();
+        double armJoint1Min = armJoint1CurrentPos;
         claw.setPosition(clawClose);
 
         waitForStart();
@@ -69,7 +72,7 @@ public class ManualMecanumDrive extends LinearOpMode {
             y = -gamepad1.left_stick_y; // Remember, this is reversed!
             x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
             rx = gamepad1.right_stick_x;
-            y2 = -gamepad2.left_stick_y;
+            y2 = gamepad2.left_stick_y;
             Servo.Direction direction = Servo.Direction.FORWARD;
 
 
@@ -92,34 +95,51 @@ public class ManualMecanumDrive extends LinearOpMode {
             backLeft.setPower(backLeftPower);
             frontRight.setPower(frontRightPower);
             backRight.setPower(backRightPower);
+            armJoint1CurrentPos = armJoint1.getCurrentPosition();
+            while (y2 > 0){
+                armJoint1CurrentPos = armJoint1.getCurrentPosition();
+                if (armJoint1CurrentPos >= armJoint1Min){
+                    armJoint1.setPower(signedSquare(y2));
+                }
+                else {
+                    armJoint1.setPower(0);
 
+                }
+            }
             //Function of Game Controller 2
-            armJoint1.setPower(signedSquare(y2));
+
             if((gamepad2.left_trigger) > 0){
                 armJoint2CurrentPos = armJoint2.getPosition();
-                if (armJoint2CurrentPos + armJoint2Increment <= armJoint2Max){
-                    armJoint2CurrentPos += armJoint2Increment;
+                if (armJoint1.getCurrentPosition() > armJoint1Min) {
+                    armJoint2CurrentPos -= armJoint2Increment;
                 }
-                else{
-                    armJoint2CurrentPos = armJoint2Max;
-                }
+                else {
+                    if (armJoint2CurrentPos - armJoint2Increment <= armJoint2Min) {
+                        armJoint2CurrentPos -= armJoint2Increment;
+                    }
+                    else {
+                        armJoint2CurrentPos = armJoint2Min;
+                    }
 
-                incrementWait = 1.001 - gamepad2.left_trigger;
-                armJoint2.setPosition(armJoint2CurrentPos);
-                sleep((long)(incrementWait*900));
+                    incrementWait = 1.001 - gamepad2.left_trigger;
+                    armJoint2.setPosition(armJoint2CurrentPos);
+                    sleep((long) (incrementWait * 900));
+                }
             }
             else if((gamepad2.right_trigger) > 0){
                 armJoint2CurrentPos = armJoint2.getPosition();
-                if (armJoint2CurrentPos - armJoint2Increment >= armJoint2Min){
-                    armJoint2CurrentPos -= armJoint2Increment;
+
+                if (armJoint2CurrentPos + armJoint2Increment >= armJoint2Max) {
+                    armJoint2CurrentPos += armJoint2Increment;
                 }
-                else{
-                    armJoint2CurrentPos = armJoint2Min;
+                else {
+                    armJoint2CurrentPos = armJoint2Max;
                 }
 
                 incrementWait = 1.001 - gamepad2.right_trigger;
                 armJoint2.setPosition(armJoint2CurrentPos);
-                sleep((long)(incrementWait*900));
+                sleep((long) (incrementWait * 900));
+
             }
 
 

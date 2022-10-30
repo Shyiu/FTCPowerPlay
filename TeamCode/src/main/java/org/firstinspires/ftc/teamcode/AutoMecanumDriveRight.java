@@ -256,7 +256,7 @@ public class AutoMecanumDriveRight extends LinearOpMode
              */
 
             encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 1.5);
-            sleep(250);
+            /*sleep(250);
             moveArm(0.06,.6);//falls back into the hardstop
             sleep(250);
             strafeLeft(DRIVE_SPEED, 13);//1 inch too far to correct for bad wheel (Not tested)
@@ -264,7 +264,7 @@ public class AutoMecanumDriveRight extends LinearOpMode
             claw.setPosition(clawOpen);
             strafeRight(DRIVE_SPEED,36);
             encoderDrive(DRIVE_SPEED, 24, 24, 24, 24, 1.5);
-            sleep(1000);
+            sleep(1000);*/
 
 //          arm/slides code
 
@@ -274,7 +274,7 @@ public class AutoMecanumDriveRight extends LinearOpMode
         else
         {
             encoderDrive(DRIVE_SPEED, -24,-24, -24, -24, 1.5);
-            sleep(250);
+            /*sleep(250);
             moveArm(0.1,1);//falls back into the hardstop
             sleep(250);
             strafeLeft(DRIVE_SPEED, 13);//1 inch too far to correct for bad wheel (Not tested)
@@ -282,16 +282,20 @@ public class AutoMecanumDriveRight extends LinearOpMode
             moveArm(.05,-.75);//-.75 is a guess. -1 seemed to work as well.
             claw.setPosition(clawOpen);
             moveArm(.05, 1); //fall back into hardstop
-            //Arm/Slides code
+            //Arm/Slides code*/
             if (parking_zone == 1){
-                strafeLeft(DRIVE_SPEED,12);
+                encoderDrive(DRIVE_SPEED, 0, -12, 0, -12, 1.5);
+                encoderDrive(DRIVE_SPEED, -24, -24, -24, -24, 1.5);
+                //strafeLeft(DRIVE_SPEED,12);
             }
-            if (parking_zone == 2){
+            /*if (parking_zone == 2){
                 strafeRight(DRIVE_SPEED, 12);
 
-            }
+            }*/
             if (parking_zone == 3){
-                strafeRight(DRIVE_SPEED, 36);
+                encoderDrive(DRIVE_SPEED, -12, 0, -12, 0, 1.5);
+                encoderDrive(DRIVE_SPEED, -24, -24, -24, -24, 1.5);
+                //strafeRight(DRIVE_SPEED, 36);
             }
         }
 
