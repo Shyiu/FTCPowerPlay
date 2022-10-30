@@ -51,8 +51,8 @@ public class ManualMecanumDrive extends LinearOpMode {
         double armUp = 1;
         double armDown = 0;
         double armJoint2Max = 1;
-        double armJoint2Min = .517;
-        double armJoint2Increment = .025;
+        double armJoint2Min = 0;
+        double armJoint2Increment = .05;
         double y,x,rx,y2;
         double denominator,frontLeftPower,backLeftPower,frontRightPower,backRightPower;
         double incrementWait = .5;
@@ -119,7 +119,7 @@ public class ManualMecanumDrive extends LinearOpMode {
 
                 incrementWait = 1.001 - gamepad2.right_trigger;
                 armJoint2.setPosition(armJoint2CurrentPos);
-                sleep((long)(incrementWait*800));
+                sleep((long)(incrementWait*900));
             }
 
 
