@@ -240,7 +240,7 @@ public class TileRunnerAuto extends LinearOpMode
              * Insert your autonomous code here, presumably running some default configuration
              * since the tag was never sighted during INIT
              */
-            encoderDrive(DRIVE_SPEED, -12,-12,2);
+            turnLeft(.2);
         }
         else
         {
@@ -292,7 +292,7 @@ public class TileRunnerAuto extends LinearOpMode
         int newRightTarget;
         int newBackRightTarget;
         int newBackLeftTarget;
-        double leftInches = 16, rightInches = -16;
+        double leftInches = 7.5, rightInches = -7.5;
         int timeoutS = 2;
         // Ensure that the opmode is still active
         if (opModeIsActive()) {
@@ -358,7 +358,7 @@ public class TileRunnerAuto extends LinearOpMode
         int newRightTarget;
         int newBackRightTarget;
         int newBackLeftTarget;
-        double leftInches = -16, rightInches = 16;
+        double leftInches = -7.5, rightInches = 7.5;
         int timeoutS = 2;
         // Ensure that the opmode is still active
         if (opModeIsActive()) {

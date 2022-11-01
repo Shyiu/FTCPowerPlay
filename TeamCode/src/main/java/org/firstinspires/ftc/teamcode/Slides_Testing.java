@@ -23,7 +23,7 @@ public class Slides_Testing extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive() && !isStopRequested()){
-            slides.setPower(-gamepad1.right_stick_y/5.0);
+            slides.setPower(-gamepad1.right_stick_y/2.0);
         }
     }
 }
