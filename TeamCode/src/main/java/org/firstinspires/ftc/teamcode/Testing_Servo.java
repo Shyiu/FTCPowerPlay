@@ -5,8 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name="Servo Testing", group="Testing")
-public class Testing extends LinearOpMode {
+@TeleOp(name="Servo Testing_Servo", group="Testing_Servo")
+public class Testing_Servo extends LinearOpMode {
     Servo testingServo;
     Boolean a;//changes servo position by -0.1
     Boolean b;//changes servo position by -0.01

@@ -14,17 +14,45 @@ public class TileRunnerMultiThreading extends LinearOpMode {
     protected DcMotor backRight;
     protected DcMotor frontLeft;
     protected DcMotor backLeft;
-    protected DcMotor slides;
+    protected DcMotor armJoint1;
+    protected Servo armJoint2;
+    protected Servo claw;
 
     final int[] LEVELS = {0,(1120/36),1000,1500};
     int current_level = 0;
-    public void gamepad2Controls(){
-        DcMotor armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
-        Servo armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
-        Servo claw = hardwareMap.get(Servo.class, "claw_servo");
+    public void Init(){
+        double clawOpen = .78;
+        double clawClose = 1;
+        armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
+        armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
+        claw = hardwareMap.get(Servo.class, "claw_servo");
 
         armJoint1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        claw.setPosition(clawClose);
 
+        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
+        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
+        backRight = hardwareMap.get(DcMotor.class, "backRight");
+        backLeft = hardwareMap.get(DcMotor.class, "backLeft");
+
+
+
+        // Reverses the direction of the left motors, to allow a positive motor power to equal
+        // forwards and a negative motor power to equal backwards
+        frontRight.setDirection(DcMotor.Direction.REVERSE);
+        backRight.setDirection(DcMotor.Direction.REVERSE);
+
+        // Makes the Driver Hub output the message "Status: Initialized"
+
+
+
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
+
+    }
+    public void gamepad2Controls(){
+
+        sleep(500);
         double clawOpen = .78;
         double clawClose = 1;
 
@@ -33,9 +61,7 @@ public class TileRunnerMultiThreading extends LinearOpMode {
         double armJoint2Increment = .01;
         double y2;
         double incrementWait = .5;
-        double armJoint2CurrentPos = armJoint2.getPosition();
-        claw.setPosition(clawClose);
-        waitForStart();
+        double armJoint2CurrentPos = 0;
         while (opModeIsActive()){
             Servo.Direction direction = Servo.Direction.FORWARD;
 
@@ -80,28 +106,12 @@ public class TileRunnerMultiThreading extends LinearOpMode {
         }
     }
     public void gamepad1Controls() {
-
+        sleep(250);
         // Pulls the motors from the robot configuration so that they can be manipulated
-        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
-        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
-        backRight = hardwareMap.get(DcMotor.class, "backRight");
-        backLeft = hardwareMap.get(DcMotor.class, "backLeft");
 
-
-
-        // Reverses the direction of the left motors, to allow a positive motor power to equal
-        // forwards and a negative motor power to equal backwards
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
-
-        // Makes the Driver Hub output the message "Status: Initialized"
-        telemetry.addData("Status", "Initialized");
-        telemetry.update();
 
 
         // Wait for the game to start (driver presses PLAY)
-        waitForStart();
-
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
@@ -160,7 +170,6 @@ public class TileRunnerMultiThreading extends LinearOpMode {
             telemetry.addData("Front Left Motor Power", frontLeft.getPower());
             telemetry.addData("Back Right Motor Power", backRight.getPower());
             telemetry.addData("Back Left Motor Power", backLeft.getPower());
-            telemetry.addData("Slider Power", slides.getPower());
 
 
 
@@ -184,6 +193,8 @@ public class TileRunnerMultiThreading extends LinearOpMode {
                 gamepad2Controls();
             }
         };
+        Init();
+        waitForStart();
         gp1.start();
         gp2.start();
     }

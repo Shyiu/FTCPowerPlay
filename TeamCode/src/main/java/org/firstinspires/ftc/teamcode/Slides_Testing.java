@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-@TeleOp(name="Slides Testing", group="Testing")
+@TeleOp(name="Slides Testing_Servo", group="Testing_Servo")
 public class Slides_Testing extends LinearOpMode {
     DcMotor slides;
     Boolean a;//changes servo position by -0.1

@@ -14,9 +14,8 @@ public class TileRunner extends LinearOpMode {
     protected DcMotor backRight;
     protected DcMotor frontLeft;
     protected DcMotor backLeft;
-    protected DcMotor slides;
 
-    final int[] LEVELS = {0,(1120/36),1000,1500};
+    final int[] LEVELS = {86, 1008, 1540};
     int current_level = 0;
     @Override
     public void runOpMode() {
@@ -30,10 +29,12 @@ public class TileRunner extends LinearOpMode {
         double clawClose = 1;
         double armJoint2Max = 1;
         double armJoint2Min = 0;
-        double armJoint2Increment = .01;
+        double armJoint2Increment = .025;
         double y2;
         double incrementWait = .5;
         double armJoint2CurrentPos = armJoint2.getPosition();
+        double armJoint1CurrentPos = armJoint1.getCurrentPosition();
+        double armJoint1Min = armJoint1CurrentPos;
         claw.setPosition(clawClose);
 
 
@@ -50,6 +51,9 @@ public class TileRunner extends LinearOpMode {
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
 
+        armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
         // Makes the Driver Hub output the message "Status: Initialized"
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -63,13 +67,47 @@ public class TileRunner extends LinearOpMode {
             Servo.Direction direction = Servo.Direction.FORWARD;
 
 
-            y2 = -gamepad2.left_stick_y;
             // Takes the current y-position of both the left and right joy-sticks
             // The highest position of a joystick is equal to -1, and the bottommost position of the
             // joystick is equal to 1
             double leftTgtPower = -this.gamepad1.left_stick_y;
             double rightTgtPower = -this.gamepad1.right_stick_y;
-            armJoint1.setPower(-negSqrt(y2));
+
+
+            if (gamepad2.dpad_up){
+                if (!(current_level++ == LEVELS.length)){
+                    current_level++;
+                    armJoint1.setTargetPosition(LEVELS[current_level]);
+                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armJoint1.setPower(.5);
+                    while(armJoint1.isBusy()){
+                        telemetry.addData("moving", "filler");
+                    }
+                    armJoint1.setPower(0);
+                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                }
+            }
+            if (gamepad2.dpad_down){
+                if (!(current_level-- < 0)){
+                    current_level--;
+                    armJoint1.setTargetPosition(LEVELS[current_level]);
+                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armJoint1.setPower(.5);
+                    while(armJoint1.isBusy()){
+                        telemetry.addData("moving", "filler");
+                    }
+                    armJoint1.setPower(0);
+                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                }
+            }
+            armJoint1CurrentPos = armJoint1.getCurrentPosition();
+
+            if (armJoint1CurrentPos > armJoint1Min * 1.25){
+                armJoint2Min = .57;
+            }
+            else {
+                armJoint2Min = 0;
+            }
             if((gamepad2.left_trigger) > 0){
                 armJoint2CurrentPos = armJoint2.getPosition();
                 if (armJoint2CurrentPos + armJoint2Increment <= armJoint2Max){
@@ -81,7 +119,7 @@ public class TileRunner extends LinearOpMode {
 
                 incrementWait = 1.001 - gamepad2.left_trigger;
                 armJoint2.setPosition(armJoint2CurrentPos);
-                sleep((long)(incrementWait*1000));
+                sleep((long)(incrementWait*10));
             }
             else if((gamepad2.right_trigger) > 0){
                 armJoint2CurrentPos = armJoint2.getPosition();
@@ -154,7 +192,7 @@ public class TileRunner extends LinearOpMode {
             telemetry.addData("Front Left Motor Power", frontLeft.getPower());
             telemetry.addData("Back Right Motor Power", backRight.getPower());
             telemetry.addData("Back Left Motor Power", backLeft.getPower());
-            telemetry.addData("Slider Power", slides.getPower());
+
 
 
 
