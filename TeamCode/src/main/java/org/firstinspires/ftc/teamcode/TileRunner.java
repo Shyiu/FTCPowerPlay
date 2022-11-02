@@ -79,9 +79,9 @@ public class TileRunner extends LinearOpMode {
                     current_level++;
                     armJoint1.setTargetPosition(LEVELS[current_level]);
                     armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    armJoint1.setPower(.5);
+                    armJoint1.setPower(-.5);
                     while(armJoint1.isBusy()){
-                        telemetry.addData("moving", "filler");
+                        ;
                     }
                     armJoint1.setPower(0);
                     armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -92,9 +92,9 @@ public class TileRunner extends LinearOpMode {
                     current_level--;
                     armJoint1.setTargetPosition(LEVELS[current_level]);
                     armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    armJoint1.setPower(.5);
+                    armJoint1.setPower(-.5);
                     while(armJoint1.isBusy()){
-                        telemetry.addData("moving", "filler");
+                            ;
                     }
                     armJoint1.setPower(0);
                     armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
