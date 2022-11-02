@@ -72,34 +72,37 @@ public class TileRunner extends LinearOpMode {
             // joystick is equal to 1
             double leftTgtPower = -this.gamepad1.left_stick_y;
             double rightTgtPower = -this.gamepad1.right_stick_y;
+            y2 = gamepad2.left_stick_y;
 
+//            if (gamepad2.dpad_up){
+//                if (!(current_level == LEVELS.length - 1)){
+//                    current_level++;
+//                    armJoint1.setTargetPosition(LEVELS[current_level]);
+//                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                    armJoint1.setPower(-.5);
+//                    while(armJoint1.isBusy()){
+//                        ;
+//                    }
+//                    armJoint1.setPower(0);
+//                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//                }
+//            }
+//            if (gamepad2.dpad_down){
+//                if (!(current_level == 0)){
+//                    current_level--;
+//                    armJoint1.setTargetPosition(LEVELS[current_level]);
+//                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                    armJoint1.setPower(-.5);
+//                    while(armJoint1.isBusy()){
+//                            ;
+//                    }
+//                    armJoint1.setPower(0);
+//                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//
+//               }
+//            }
 
-            if (gamepad2.dpad_up){
-                if (!(current_level == LEVELS.length - 1)){
-                    current_level++;
-                    armJoint1.setTargetPosition(LEVELS[current_level]);
-                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    armJoint1.setPower(-.5);
-                    while(armJoint1.isBusy()){
-                        ;
-                    }
-                    armJoint1.setPower(0);
-                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                }
-            }
-            if (gamepad2.dpad_down){
-                if (!(current_level == 0)){
-                    current_level--;
-                    armJoint1.setTargetPosition(LEVELS[current_level]);
-                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    armJoint1.setPower(-.5);
-                    while(armJoint1.isBusy()){
-                            ;
-                    }
-                    armJoint1.setPower(0);
-                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                }
-            }
+            armJoint1.setPower(negSqrt(y2));
             armJoint1CurrentPos = armJoint1.getCurrentPosition();
 
             if (armJoint1CurrentPos > armJoint1Min * 1.25){

@@ -70,7 +70,7 @@ public class TileRunnerAuto extends LinearOpMode
     static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
     //35:45 = 3.72 ft/s 40:40 = 2.88 ft/s 45:35 = 2.26 ft/s  (0.25 initially)
     //we need to figure out exact gear ratio without trial and error
-    static final double     DRIVE_GEAR_REDUCTION    = 1 ;     // No External Gearing.
+    static final double     DRIVE_GEAR_REDUCTION    = 30/40 ;     // No External Gearing.
     // Diameter - 4.0 for mecanum, 4.0 for other
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
@@ -244,15 +244,23 @@ public class TileRunnerAuto extends LinearOpMode
         }
         else
         {
-            encoderDrive(DRIVE_SPEED, 12, 12, 2);
+            if (parking_zone == 2){
+                encoderDrive(DRIVE_SPEED, 6, 6, 2);//
+
+            }
 
 
             if (parking_zone == 1){
-                encoderDrive(DRIVE_SPEED,24,24,2);
+                encoderDrive(DRIVE_SPEED, 12, 12, 2);
+
+                encoderDrive(DRIVE_SPEED,-8,8,2);
+                encoderDrive(DRIVE_SPEED, 12, 12, 2);
+
             }
             if (parking_zone == 3){
-
-                encoderDrive(DRIVE_SPEED, -24, -24, 2);
+                encoderDrive(DRIVE_SPEED, 12, 12, 2);
+                encoderDrive(DRIVE_SPEED,8,-8,2);
+                encoderDrive(DRIVE_SPEED, 12, 12, 2);
             }
         }
 
