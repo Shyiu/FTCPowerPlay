@@ -103,10 +103,10 @@ public class TileRunner extends LinearOpMode {
             armJoint1CurrentPos = armJoint1.getCurrentPosition();
 
             if (armJoint1CurrentPos > armJoint1Min * 1.25){
-                armJoint2Min = .57;
+                armJoint2Min = 0;
             }
             else {
-                armJoint2Min = 0;
+                armJoint2Min = 0.57;
             }
             if((gamepad2.left_trigger) > 0){
                 armJoint2CurrentPos = armJoint2.getPosition();
