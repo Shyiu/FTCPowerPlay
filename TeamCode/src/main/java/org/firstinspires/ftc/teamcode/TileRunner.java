@@ -36,7 +36,8 @@ public class TileRunner extends LinearOpMode {
         double armJoint1CurrentPos = armJoint1.getCurrentPosition();
         double armJoint1Min = armJoint1CurrentPos;
         claw.setPosition(clawClose);
-
+        
+        
 
         // Pulls the motors from the robot configuration so that they can be manipulated
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
@@ -53,9 +54,18 @@ public class TileRunner extends LinearOpMode {
 
         armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armJoint1.setTargetPosition(LEVELS[current_level]);
+        armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armJoint1.setPower(.5);
+        while (armJoint1.isBusy()){
+            ;   
+        }
+        armJoint1.setPower(0);
+        armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        
 
         // Makes the Driver Hub output the message "Status: Initialized"
-        telemetry.addData("Status", "Initialized");
+        telemetry.addData("Status", ";Initialized");
         telemetry.update();
 
 
@@ -81,7 +91,7 @@ public class TileRunner extends LinearOpMode {
                     armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     armJoint1.setPower(.5);
                     while(armJoint1.isBusy()){
-                        telemetry.addData("moving", "filler");
+                       ;
                     }
                     armJoint1.setPower(0);
                     armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
