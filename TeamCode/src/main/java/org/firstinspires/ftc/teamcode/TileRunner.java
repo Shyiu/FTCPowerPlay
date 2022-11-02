@@ -75,7 +75,7 @@ public class TileRunner extends LinearOpMode {
 
 
             if (gamepad2.dpad_up){
-                if (!(current_level++ == LEVELS.length)){
+                if (!(current_level == LEVELS.length - 1)){
                     current_level++;
                     armJoint1.setTargetPosition(LEVELS[current_level]);
                     armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -88,7 +88,7 @@ public class TileRunner extends LinearOpMode {
                 }
             }
             if (gamepad2.dpad_down){
-                if (!(current_level-- < 0)){
+                if (!(current_level == 0)){
                     current_level--;
                     armJoint1.setTargetPosition(LEVELS[current_level]);
                     armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
