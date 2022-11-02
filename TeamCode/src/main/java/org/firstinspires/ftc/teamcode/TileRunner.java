@@ -91,7 +91,7 @@ public class TileRunner extends LinearOpMode {
                     armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     armJoint1.setPower(.5);
                     while(armJoint1.isBusy()){
-                        telemetry.addData("moving", "filler");
+                       ;
                     }
                     armJoint1.setPower(0);
                     armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
