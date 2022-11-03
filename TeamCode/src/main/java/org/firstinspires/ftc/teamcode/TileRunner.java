@@ -16,6 +16,8 @@ public class TileRunner extends LinearOpMode {
     protected DcMotor backLeft;
 
     final int[] LEVELS = {86, 1008, 1540};
+    final double[] SERVO_POS = {.58,.22,0};
+    int servo_position = 0;
     int current_level = 0;
     @Override
     public void runOpMode() {
@@ -34,6 +36,9 @@ public class TileRunner extends LinearOpMode {
         double incrementWait = .5;
         double armJoint2CurrentPos = armJoint2.getPosition();
         double armJoint1CurrentPos = armJoint1.getCurrentPosition();
+
+        armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         double armJoint1Min = armJoint1CurrentPos;
         claw.setPosition(clawClose);
 
@@ -51,8 +56,7 @@ public class TileRunner extends LinearOpMode {
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
 
-        armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
 
         // Makes the Driver Hub output the message "Status: Initialized"
         telemetry.addData("Status", "Initialized");
@@ -105,43 +109,67 @@ public class TileRunner extends LinearOpMode {
             armJoint1.setPower(negSqrt(y2));
             armJoint1CurrentPos = armJoint1.getCurrentPosition();
 
-            if (armJoint1CurrentPos > armJoint1Min * 1.25){
-                armJoint2Min = .57;
-            }
-            else {
+            if (-armJoint1CurrentPos < armJoint1Min * 1.25){
                 armJoint2Min = 0;
             }
-            if((gamepad2.left_trigger) > 0){
-                armJoint2CurrentPos = armJoint2.getPosition();
-                if (armJoint2CurrentPos + armJoint2Increment <= armJoint2Max){
-                    armJoint2CurrentPos += armJoint2Increment;
-                }
-                else{
-                    armJoint2CurrentPos = armJoint2Max;
-                }
-
-                incrementWait = 1.001 - gamepad2.left_trigger;
-                armJoint2.setPosition(armJoint2CurrentPos);
-                sleep((long)(incrementWait*10));
-            }
-            else if((gamepad2.right_trigger) > 0){
-                armJoint2CurrentPos = armJoint2.getPosition();
-                if (armJoint2CurrentPos - armJoint2Increment >= armJoint2Min){
-                    armJoint2CurrentPos -= armJoint2Increment;
-                }
-                else{
-                    armJoint2CurrentPos = armJoint2Min;
-                }
-
-                incrementWait = 1.001 - gamepad2.right_trigger;
-                armJoint2.setPosition(armJoint2CurrentPos);
-                sleep((long)(incrementWait*1500));
+            else {
+                armJoint2Min = .57;
             }
 
+//            if((gamepad2.left_trigger) > 0){
+//                armJoint2CurrentPos = armJoint2.getPosition();
+//                if (armJoint2CurrentPos + armJoint2Increment <= armJoint2Max){
+//                    armJoint2CurrentPos += armJoint2Increment;
+//                }
+//                else{
+//                    armJoint2CurrentPos = armJoint2Max;
+//                }
+//
+//                incrementWait = 1.001 - gamepad2.left_trigger;
+//                armJoint2.setPosition(armJoint2CurrentPos);
+//                sleep((long)(incrementWait*10));
+//            }
+//            else if((gamepad2.right_trigger) > 0){
+//                armJoint2CurrentPos = armJoint2.getPosition();
+//                if (armJoint2CurrentPos - armJoint2Increment >= armJoint2Min){
+//                    armJoint2CurrentPos -= armJoint2Increment;
+//                }
+//                else{
+//                    armJoint2CurrentPos = armJoint2Min;
+//                }
+//
+//                incrementWait = 1.001 - gamepad2.right_trigger;
+//                armJoint2.setPosition(armJoint2CurrentPos);
+//                sleep((long)(incrementWait*1500));
+//            }
+            if (gamepad2.dpad_up){
+                if (servo_position != SERVO_POS.length - 1){
+                    servo_position++;
+                }
+                else{
+                    servo_position=0;
+                }
+                armJoint2.setPosition(SERVO_POS[servo_position]);
+                while (gamepad2.dpad_up){
+                    ;
+                }
+            }
+            if (gamepad2.dpad_down){
+                servo_position--;
+                if (servo_position < 0){
+                    servo_position = 0;
+                }
+                armJoint2.setPosition(SERVO_POS[servo_position]);
+                while (gamepad2.dpad_down){
+                    ;
+                }
+            }
 
-            claw.setDirection(direction);
+
             if (gamepad2.y) {
                 claw.setPosition(clawOpen);
+                armJoint2.setPosition(1);
+                servo_position = 0;
             }
             else if(gamepad2.x){
                 claw.setPosition(clawClose);
@@ -190,7 +218,8 @@ public class TileRunner extends LinearOpMode {
             // The current power of each motor
             telemetry.addData("Left Target Power", leftTgtPower);
             telemetry.addData("Right Target Power", rightTgtPower);
-
+            telemetry.addData("Arm Position", armJoint1.getCurrentPosition());
+            telemetry.addData("Arm Min Position", armJoint1Min);
             telemetry.addData("Front Right Motor Power", frontRight.getPower());
             telemetry.addData("Front Left Motor Power", frontLeft.getPower());
             telemetry.addData("Back Right Motor Power", backRight.getPower());
