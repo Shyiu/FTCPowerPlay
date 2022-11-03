@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.teamcode.threadopmode.TaskThread;
 import org.firstinspires.ftc.teamcode.threadopmode.ThreadOpMode;
 
 @TeleOp
@@ -64,7 +63,7 @@ public class TileRunnerMultiThreading extends ThreadOpMode {
         telemetry.update();
 
 
-        registerThread(new TaskThread(new TaskThread.Actions() {
+        registerThread(new AprilTagRecognition.TaskThread(new AprilTagRecognition.TaskThread.Actions() {
             @Override
             public void loop() {
                 //The loop method should contain loop code
@@ -96,7 +95,7 @@ public class TileRunnerMultiThreading extends ThreadOpMode {
 
             }
         }));
-        registerThread(new TaskThread(new TaskThread.Actions() {
+        registerThread(new AprilTagRecognition.TaskThread(new AprilTagRecognition.TaskThread.Actions() {
             @Override
             public void loop() {
                 double y2 = gamepad2.left_stick_y;

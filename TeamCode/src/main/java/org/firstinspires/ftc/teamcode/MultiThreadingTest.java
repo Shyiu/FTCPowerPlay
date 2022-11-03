@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import org.firstinspires.ftc.teamcode.threadopmode.*;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 //Extend ThreadOpMode rather than OpMode
@@ -15,7 +14,7 @@ public class MultiThreadingTest extends ThreadOpMode {
         dcMotor = hardwareMap.dcMotor.get("dcMotor");
 
         //Below is a new thread
-        registerThread(new TaskThread(new TaskThread.Actions() {
+        registerThread(new AprilTagRecognition.TaskThread(new AprilTagRecognition.TaskThread.Actions() {
             @Override
             public void loop() {
                 //The loop method should contain what to constantly run in the thread
