@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp
 public class FiniteStateMachineOpMode extends LinearOpMode {
+    //
 
     public enum CommandState {
         MOVE_ARM,
