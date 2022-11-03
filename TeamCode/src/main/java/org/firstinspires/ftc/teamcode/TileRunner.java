@@ -16,6 +16,8 @@ public class TileRunner extends LinearOpMode {
     protected DcMotor backLeft;
 
     final int[] LEVELS = {86, 1008, 1540};
+    final double[] SERVO_POS = {.58,.22,0};
+    int servo_position = 0;
     int current_level = 0;
     @Override
     public void runOpMode() {
@@ -34,10 +36,12 @@ public class TileRunner extends LinearOpMode {
         double incrementWait = .5;
         double armJoint2CurrentPos = armJoint2.getPosition();
         double armJoint1CurrentPos = armJoint1.getCurrentPosition();
+
+        armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         double armJoint1Min = armJoint1CurrentPos;
         claw.setPosition(clawClose);
-        
-        
+
 
         // Pulls the motors from the robot configuration so that they can be manipulated
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
@@ -52,20 +56,10 @@ public class TileRunner extends LinearOpMode {
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
 
-        armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        armJoint1.setTargetPosition(LEVELS[current_level]);
-        armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armJoint1.setPower(.5);
-        while (armJoint1.isBusy()){
-            ;   
-        }
-        armJoint1.setPower(0);
-        armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        
+
 
         // Makes the Driver Hub output the message "Status: Initialized"
-        telemetry.addData("Status", ";Initialized");
+        telemetry.addData("Status", "Initialized");
         telemetry.update();
 
 
@@ -82,73 +76,100 @@ public class TileRunner extends LinearOpMode {
             // joystick is equal to 1
             double leftTgtPower = -this.gamepad1.left_stick_y;
             double rightTgtPower = -this.gamepad1.right_stick_y;
+            y2 = gamepad2.left_stick_y;
 
+//            if (gamepad2.dpad_up){
+//                if (!(current_level == LEVELS.length - 1)){
+//                    current_level++;
+//                    armJoint1.setTargetPosition(LEVELS[current_level]);
+//                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                    armJoint1.setPower(-.5);
+//                    while(armJoint1.isBusy()){
+//                        ;
+//                    }
+//                    armJoint1.setPower(0);
+//                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//                }
+//            }
+//            if (gamepad2.dpad_down){
+//                if (!(current_level == 0)){
+//                    current_level--;
+//                    armJoint1.setTargetPosition(LEVELS[current_level]);
+//                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                    armJoint1.setPower(-.5);
+//                    while(armJoint1.isBusy()){
+//                            ;
+//                    }
+//                    armJoint1.setPower(0);
+//                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//
+//               }
+//            }
 
-            if (gamepad2.dpad_up){
-                if (!(current_level == LEVELS.length - 1)){
-                    current_level++;
-                    armJoint1.setTargetPosition(LEVELS[current_level]);
-                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    armJoint1.setPower(.5);
-                    while(armJoint1.isBusy()){
-                       ;
-                    }
-                    armJoint1.setPower(0);
-                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                }
-            }
-            if (gamepad2.dpad_down){
-                if (!(current_level == 0)){
-                    current_level--;
-                    armJoint1.setTargetPosition(LEVELS[current_level]);
-                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    armJoint1.setPower(.5);
-                    while(armJoint1.isBusy()){
-                        telemetry.addData("moving", "filler");
-                    }
-                    armJoint1.setPower(0);
-                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                }
-            }
+            armJoint1.setPower(negSqrt(y2));
             armJoint1CurrentPos = armJoint1.getCurrentPosition();
 
-            if (armJoint1CurrentPos > armJoint1Min * 1.25){
+            if (-armJoint1CurrentPos < armJoint1Min * 1.25){
                 armJoint2Min = 0;
             }
             else {
-                armJoint2Min = 0.57;
+                armJoint2Min = .57;
             }
-            if((gamepad2.left_trigger) > 0){
-                armJoint2CurrentPos = armJoint2.getPosition();
-                if (armJoint2CurrentPos + armJoint2Increment <= armJoint2Max){
-                    armJoint2CurrentPos += armJoint2Increment;
+
+//            if((gamepad2.left_trigger) > 0){
+//                armJoint2CurrentPos = armJoint2.getPosition();
+//                if (armJoint2CurrentPos + armJoint2Increment <= armJoint2Max){
+//                    armJoint2CurrentPos += armJoint2Increment;
+//                }
+//                else{
+//                    armJoint2CurrentPos = armJoint2Max;
+//                }
+//
+//                incrementWait = 1.001 - gamepad2.left_trigger;
+//                armJoint2.setPosition(armJoint2CurrentPos);
+//                sleep((long)(incrementWait*10));
+//            }
+//            else if((gamepad2.right_trigger) > 0){
+//                armJoint2CurrentPos = armJoint2.getPosition();
+//                if (armJoint2CurrentPos - armJoint2Increment >= armJoint2Min){
+//                    armJoint2CurrentPos -= armJoint2Increment;
+//                }
+//                else{
+//                    armJoint2CurrentPos = armJoint2Min;
+//                }
+//
+//                incrementWait = 1.001 - gamepad2.right_trigger;
+//                armJoint2.setPosition(armJoint2CurrentPos);
+//                sleep((long)(incrementWait*1500));
+//            }
+            if (gamepad2.dpad_up){
+                if (servo_position != SERVO_POS.length - 1){
+                    servo_position++;
                 }
                 else{
-                    armJoint2CurrentPos = armJoint2Max;
+                    servo_position=0;
                 }
-
-                incrementWait = 1.001 - gamepad2.left_trigger;
-                armJoint2.setPosition(armJoint2CurrentPos);
-                sleep((long)(incrementWait*10));
+                armJoint2.setPosition(SERVO_POS[servo_position]);
+                while (gamepad2.dpad_up){
+                    ;
+                }
             }
-            else if((gamepad2.right_trigger) > 0){
-                armJoint2CurrentPos = armJoint2.getPosition();
-                if (armJoint2CurrentPos - armJoint2Increment >= armJoint2Min){
-                    armJoint2CurrentPos -= armJoint2Increment;
+            if (gamepad2.dpad_down){
+                servo_position--;
+                if (servo_position < 0){
+                    servo_position = 0;
                 }
-                else{
-                    armJoint2CurrentPos = armJoint2Min;
+                armJoint2.setPosition(SERVO_POS[servo_position]);
+                while (gamepad2.dpad_down){
+                    ;
                 }
-
-                incrementWait = 1.001 - gamepad2.right_trigger;
-                armJoint2.setPosition(armJoint2CurrentPos);
-                sleep((long)(incrementWait*1500));
             }
 
 
-            claw.setDirection(direction);
             if (gamepad2.y) {
                 claw.setPosition(clawOpen);
+                armJoint2.setPosition(1);
+                servo_position = 0;
             }
             else if(gamepad2.x){
                 claw.setPosition(clawClose);
@@ -197,7 +218,8 @@ public class TileRunner extends LinearOpMode {
             // The current power of each motor
             telemetry.addData("Left Target Power", leftTgtPower);
             telemetry.addData("Right Target Power", rightTgtPower);
-
+            telemetry.addData("Arm Position", armJoint1.getCurrentPosition());
+            telemetry.addData("Arm Min Position", armJoint1Min);
             telemetry.addData("Front Right Motor Power", frontRight.getPower());
             telemetry.addData("Front Left Motor Power", frontLeft.getPower());
             telemetry.addData("Back Right Motor Power", backRight.getPower());

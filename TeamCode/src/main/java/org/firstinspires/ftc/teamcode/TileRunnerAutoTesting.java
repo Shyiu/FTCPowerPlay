@@ -34,8 +34,8 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Tilerunner Auto V3", group = "Tilerunner")
-public class TileRunnerAuto extends LinearOpMode
+@Autonomous(name = "Tilerunner Auto Testing V4", group = "Tilerunner")
+public class TileRunnerAutoTesting extends LinearOpMode
 {
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
@@ -74,7 +74,7 @@ public class TileRunnerAuto extends LinearOpMode
     // Diameter - 4.0 for mecanum, 4.0 for other
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
-            (WHEEL_DIAMETER_INCHES * Math.PI);
+            (WHEEL_DIAMETER_INCHES * 3.1415);
     static final double     DRIVE_SPEED             = 0.03;
     static final double     TURN_SPEED              = 0.5;
 
@@ -89,7 +89,7 @@ public class TileRunnerAuto extends LinearOpMode
 
     // Reverses the direction of the left motors, to allow a positive motor power to equal
     // forwards and a negative motor power to equal backwards
-    DcMotor frontRight, frontLeft, backRight, backLeft;
+    DcMotor frontLeft, frontRight, backLeft, backRight;
 
 
 
@@ -99,29 +99,21 @@ public class TileRunnerAuto extends LinearOpMode
     public void runOpMode()
     {
 
-        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
-        backRight = hardwareMap.get(DcMotor.class, "backRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
-        DcMotor[] listOfMotors = {frontRight, frontLeft, backRight, backLeft};
 
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
 
-        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        frontRight.setDirection(DcMotor.Direction.FORWARD);
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.FORWARD);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
+
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
@@ -245,7 +237,7 @@ public class TileRunnerAuto extends LinearOpMode
              * Insert your autonomous code here, presumably running some default configuration
              * since the tag was never sighted during INIT
              */
-            encoderDrive(DRIVE_SPEED, 1, 1, 2);
+            encoderDrive(DRIVE_SPEED, 0, 12, 2);
         }
         else
         {
@@ -307,28 +299,20 @@ public class TileRunnerAuto extends LinearOpMode
         if (opModeIsActive()) {
 
             // Determine new target position, and pass to motor controller
-            newLeftTarget = frontLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);
-            newRightTarget = frontRight.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
+            newRightTarget = frontLeft.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
+            newBackRightTarget = backLeft.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
 
-            frontLeft.setTargetPosition(newLeftTarget);
-            frontRight.setTargetPosition(newRightTarget);
-            backLeft.setTargetPosition(newBackLeftTarget);
-            backRight.setTargetPosition(newBackRightTarget);
+            frontLeft.setTargetPosition(newRightTarget);
+            backLeft.setTargetPosition(newBackRightTarget);
 
             // Turn On RUN_TO_POSITION
             frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
             // reset the timeout time and start motion.
             runtime.reset();
             frontLeft.setPower(Math.abs(speed));
-            frontRight.setPower(Math.abs(speed));
             backLeft.setPower(Math.abs(speed));
-            backRight.setPower(Math.abs(speed));
 
             // keep looping while we are still active, and there is time left, and both motors are running.
             // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
@@ -338,26 +322,22 @@ public class TileRunnerAuto extends LinearOpMode
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
             while (opModeIsActive() &&
                     (runtime.seconds() < timeoutS) &&
-                    (frontLeft.isBusy() && frontRight.isBusy() && backLeft.isBusy() && backRight.isBusy())) {
+                    (frontLeft.isBusy() && frontLeft.isBusy() && backLeft.isBusy() && backLeft.isBusy())) {
 
                 // Display it for the driver.
-                telemetry.addData("Running to", " %7d :%7d", newLeftTarget, newRightTarget);
-                telemetry.addData("Currently at", " at %7d :%7d",
-                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
+                telemetry.addData("Running to", " %7d ", newRightTarget);
+                telemetry.addData("Currently at", " at :%7d",
+                        frontLeft.getCurrentPosition());
                 telemetry.update();
             }
 
             // Stop all motion;
             frontLeft.setPower(0);
-            frontRight.setPower(0);
             backLeft.setPower(0);
-            backRight.setPower(0);
 
             // Turn off RUN_TO_POSITION
             frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
             sleep(250);   // optional pause after each move.
         }
@@ -373,28 +353,20 @@ public class TileRunnerAuto extends LinearOpMode
         if (opModeIsActive()) {
 
             // Determine new target position, and pass to motor controller
-            newLeftTarget = frontLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);
-            newRightTarget = frontRight.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
+            newRightTarget = frontLeft.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
+            newBackRightTarget = backLeft.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
 
-            frontLeft.setTargetPosition(newLeftTarget);
-            frontRight.setTargetPosition(newRightTarget);
-            backLeft.setTargetPosition(newBackLeftTarget);
-            backRight.setTargetPosition(newBackRightTarget);
+            frontLeft.setTargetPosition(newRightTarget);
+            backLeft.setTargetPosition(newBackRightTarget);
 
             // Turn On RUN_TO_POSITION
             frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
             // reset the timeout time and start motion.
             runtime.reset();
             frontLeft.setPower(Math.abs(speed));
-            frontRight.setPower(Math.abs(speed));
             backLeft.setPower(Math.abs(speed));
-            backRight.setPower(Math.abs(speed));
 
             // keep looping while we are still active, and there is time left, and both motors are running.
             // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
@@ -404,26 +376,22 @@ public class TileRunnerAuto extends LinearOpMode
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
             while (opModeIsActive() &&
                     (runtime.seconds() < timeoutS) &&
-                    (frontLeft.isBusy() && frontRight.isBusy() && backLeft.isBusy() && backRight.isBusy())) {
+                    (frontLeft.isBusy() && frontLeft.isBusy() && backLeft.isBusy() && backLeft.isBusy())) {
 
                 // Display it for the driver.
-                telemetry.addData("Running to", " %7d :%7d", newLeftTarget, newRightTarget);
-                telemetry.addData("Currently at", " at %7d :%7d",
-                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
+                telemetry.addData("Running to", " %7d ", newRightTarget);
+                telemetry.addData("Currently at", " at %7d ",
+                        frontLeft.getCurrentPosition());
                 telemetry.update();
             }
 
             // Stop all motion;
             frontLeft.setPower(0);
-            frontRight.setPower(0);
             backLeft.setPower(0);
-            backRight.setPower(0);
 
             // Turn off RUN_TO_POSITION
             frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
             sleep(250);   // optional pause after each move.
         }
@@ -440,28 +408,20 @@ public class TileRunnerAuto extends LinearOpMode
         if (opModeIsActive()) {
 
             // Determine new target position, and pass to motor controller
-            newLeftTarget = frontLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
-            newRightTarget = frontRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
+            newRightTarget = frontLeft.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
+            newBackRightTarget = backLeft.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
 
-            frontLeft.setTargetPosition(-newLeftTarget);
-            frontRight.setTargetPosition(-newRightTarget);
-            backLeft.setTargetPosition(-newBackLeftTarget);
-            backRight.setTargetPosition(-newBackRightTarget);
+            frontLeft.setTargetPosition(newRightTarget);
+            backLeft.setTargetPosition(newBackRightTarget);
 
             // Turn On RUN_TO_POSITION
             frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
             // reset the timeout time and start motion.
             runtime.reset();
             frontLeft.setPower(Math.abs(speed));
-            frontRight.setPower(Math.abs(speed));
             backLeft.setPower(Math.abs(speed));
-            backRight.setPower(Math.abs(speed));
 
             // keep looping while we are still active, and there is time left, and both motors are running.
             // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
@@ -471,29 +431,24 @@ public class TileRunnerAuto extends LinearOpMode
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
             while (opModeIsActive() &&
                     (runtime.seconds() < timeoutS) &&
-                    (frontLeft.isBusy() && frontRight.isBusy() && backLeft.isBusy() && backRight.isBusy())) {
+                    (backLeft.isBusy() && frontLeft.isBusy())) {
 
                 // Display it for the driver.
-                telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
-                telemetry.addData("Currently at",  " at %7d :%7d",
-                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
+                telemetry.addData("Running to", " %7d :",  newRightTarget);
+                telemetry.addData("Currently at", " at %7d :",
+                         frontLeft.getCurrentPosition());
                 telemetry.update();
             }
 
             // Stop all motion;
             frontLeft.setPower(0);
-            frontRight.setPower(0);
             backLeft.setPower(0);
-            backRight.setPower(0);
 
             // Turn off RUN_TO_POSITION
             frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
             sleep(250);   // optional pause after each move.
         }
-
     }
 }
