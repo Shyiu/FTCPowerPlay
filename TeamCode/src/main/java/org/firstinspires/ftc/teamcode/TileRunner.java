@@ -16,7 +16,7 @@ public class TileRunner extends LinearOpMode {
     protected DcMotor backLeft;
 
     final int[] LEVELS = {86, 1008, 1540};
-    final double[] SERVO_POS = {.58,.22,0};
+    final double[] SERVO_POS = {.58,1,.22,0};
     int servo_position = 0;
     int current_level = 0;
     @Override
@@ -29,12 +29,7 @@ public class TileRunner extends LinearOpMode {
 
         double clawOpen = .78;
         double clawClose = 1;
-        double armJoint2Max = 1;
-        double armJoint2Min = 0;
-        double armJoint2Increment = .025;
         double y2;
-        double incrementWait = .5;
-        double armJoint2CurrentPos = armJoint2.getPosition();
         double armJoint1CurrentPos = armJoint1.getCurrentPosition();
 
         armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -78,70 +73,10 @@ public class TileRunner extends LinearOpMode {
             double rightTgtPower = -this.gamepad1.right_stick_y;
             y2 = gamepad2.left_stick_y;
 
-//            if (gamepad2.dpad_up){
-//                if (!(current_level == LEVELS.length - 1)){
-//                    current_level++;
-//                    armJoint1.setTargetPosition(LEVELS[current_level]);
-//                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//                    armJoint1.setPower(-.5);
-//                    while(armJoint1.isBusy()){
-//                        ;
-//                    }
-//                    armJoint1.setPower(0);
-//                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//                }
-//            }
-//            if (gamepad2.dpad_down){
-//                if (!(current_level == 0)){
-//                    current_level--;
-//                    armJoint1.setTargetPosition(LEVELS[current_level]);
-//                    armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//                    armJoint1.setPower(-.5);
-//                    while(armJoint1.isBusy()){
-//                            ;
-//                    }
-//                    armJoint1.setPower(0);
-//                    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//
-//               }
-//            }
-
             armJoint1.setPower(negSqrt(y2));
-            armJoint1CurrentPos = armJoint1.getCurrentPosition();
 
-            if (-armJoint1CurrentPos < armJoint1Min * 1.25){
-                armJoint2Min = 0;
-            }
-            else {
-                armJoint2Min = .57;
-            }
 
-//            if((gamepad2.left_trigger) > 0){
-//                armJoint2CurrentPos = armJoint2.getPosition();
-//                if (armJoint2CurrentPos + armJoint2Increment <= armJoint2Max){
-//                    armJoint2CurrentPos += armJoint2Increment;
-//                }
-//                else{
-//                    armJoint2CurrentPos = armJoint2Max;
-//                }
-//
-//                incrementWait = 1.001 - gamepad2.left_trigger;
-//                armJoint2.setPosition(armJoint2CurrentPos);
-//                sleep((long)(incrementWait*10));
-//            }
-//            else if((gamepad2.right_trigger) > 0){
-//                armJoint2CurrentPos = armJoint2.getPosition();
-//                if (armJoint2CurrentPos - armJoint2Increment >= armJoint2Min){
-//                    armJoint2CurrentPos -= armJoint2Increment;
-//                }
-//                else{
-//                    armJoint2CurrentPos = armJoint2Min;
-//                }
-//
-//                incrementWait = 1.001 - gamepad2.right_trigger;
-//                armJoint2.setPosition(armJoint2CurrentPos);
-//                sleep((long)(incrementWait*1500));
-//            }
+
             if (gamepad2.dpad_up){
                 if (servo_position != SERVO_POS.length - 1){
                     servo_position++;
@@ -174,34 +109,6 @@ public class TileRunner extends LinearOpMode {
             else if(gamepad2.x){
                 claw.setPosition(clawClose);
             }
-
-//            if (gamepad2.dpad_up || current_level == 10){
-//                if(current_level < LEVELS.length -1)  {
-//                    current_level++;
-//                }
-//                slides.setTargetPosition(LEVELS[current_level]);
-//                slides.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//
-//                slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//            }
-//            else if (gamepad2.dpad_down || current_level == 10){
-//                if(current_level > 0) {
-//                    current_level--;
-//                }
-//                slides.setTargetPosition(LEVELS[current_level]);
-//                slides.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//                slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//            }
-//            else if (Math.abs(gamepad2.left_stick_y) > 0){
-//                slides.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-//                slides.setPower(-1*(negSqrt(gamepad2.left_stick_y)/2.0));
-//            }
-//            else{
-//                slides.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-//                slides.setPower(0);
-//            }
-
-
 
 
             // Uses the current position of the joy-sticks and makes the motors move at the

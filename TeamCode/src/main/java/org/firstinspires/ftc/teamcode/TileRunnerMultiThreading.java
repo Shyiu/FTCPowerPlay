@@ -4,8 +4,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.teamcode.threadopmode.ThreadOpMode;
-
 @TeleOp
 public class TileRunnerMultiThreading extends ThreadOpMode {
     protected DcMotor frontRight;
@@ -16,8 +14,7 @@ public class TileRunnerMultiThreading extends ThreadOpMode {
     protected Servo armJoint2;
     protected Servo claw;
 
-    final int[] LEVELS = {86, 1008, 1540};
-    final double[] SERVO_POS = {.58,.22,0};
+    final double[] SERVO_POS = {.58,1,.22,0};
     int servo_position = 0;
     int current_level = 0;
     @Override
@@ -30,11 +27,7 @@ public class TileRunnerMultiThreading extends ThreadOpMode {
 
         double clawOpen = .78;
         double clawClose = 1;
-        double armJoint2Max = 1;
-        double armJoint2Min = 0;
-        double armJoint2Increment = .025;
-        double incrementWait = .5;
-        double armJoint2CurrentPos = armJoint2.getPosition();
+
         double armJoint1CurrentPos = armJoint1.getCurrentPosition();
 
         armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -63,7 +56,7 @@ public class TileRunnerMultiThreading extends ThreadOpMode {
         telemetry.update();
 
 
-        registerThread(new AprilTagRecognition.TaskThread(new AprilTagRecognition.TaskThread.Actions() {
+        registerThread(new TaskThread(new TaskThread.Actions() {
             @Override
             public void loop() {
                 //The loop method should contain loop code
@@ -95,7 +88,7 @@ public class TileRunnerMultiThreading extends ThreadOpMode {
 
             }
         }));
-        registerThread(new AprilTagRecognition.TaskThread(new AprilTagRecognition.TaskThread.Actions() {
+        registerThread(new TaskThread(new TaskThread.Actions() {
             @Override
             public void loop() {
                 double y2 = gamepad2.left_stick_y;
