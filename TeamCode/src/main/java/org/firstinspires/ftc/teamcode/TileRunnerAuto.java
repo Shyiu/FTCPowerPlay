@@ -74,7 +74,7 @@ public class TileRunnerAuto extends LinearOpMode
     // Diameter - 4.0 for mecanum, 4.0 for other
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
-            (WHEEL_DIAMETER_INCHES * 3.1415);
+            (WHEEL_DIAMETER_INCHES * Math.PI);
     static final double     DRIVE_SPEED             = 0.03;
     static final double     TURN_SPEED              = 0.5;
 
