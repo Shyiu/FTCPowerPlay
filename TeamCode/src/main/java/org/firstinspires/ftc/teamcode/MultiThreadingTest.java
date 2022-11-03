@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import org.firstinspires.ftc.teamcode.threadopmode.*;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 //Extend ThreadOpMode rather than OpMode
