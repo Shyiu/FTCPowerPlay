@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp
+@TeleOp(name = "Tile Runner Tele Op", group = "Tele-Op")
 public class TileRunnerMultiThreading extends ThreadOpMode {
     protected DcMotor frontRight;
     protected DcMotor backRight;

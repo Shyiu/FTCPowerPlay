@@ -24,6 +24,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -34,7 +35,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Tilerunner Auto V3", group = "Tilerunner")
+@Autonomous(name = "Tilerunner Auto", group = "Tilerunner")
 public class TileRunnerAuto extends LinearOpMode
 {
     OpenCvCamera camera;
@@ -43,7 +44,7 @@ public class TileRunnerAuto extends LinearOpMode
     final int ID_TAG_OF_INTEREST = 0;
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
-
+    final double[] SERVO_POS = {.58,1,.22,0};
 
 
     static final double FEET_PER_METER = 3.28084;
@@ -70,18 +71,19 @@ public class TileRunnerAuto extends LinearOpMode
     static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
     //35:45 = 3.72 ft/s 40:40 = 2.88 ft/s 45:35 = 2.26 ft/s  (0.25 initially)
     //we need to figure out exact gear ratio without trial and error
-    static final double     DRIVE_GEAR_REDUCTION    = 0.1;     // No External Gearing.
+    static final double     DRIVE_GEAR_REDUCTION    = 35/45.0;     // No External Gearing.
     // Diameter - 4.0 for mecanum, 4.0 for other
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * Math.PI);
     static final double     DRIVE_SPEED             = 0.03;
     static final double     TURN_SPEED              = 0.5;
-
-
+    static final DcMotor.Direction FORWARD = DcMotor.Direction.FORWARD;
+    static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
 
     int parking_zone = 2;
-
+    double clawOpen = .78;
+    double clawClose = 1;
     AprilTagDetection tagOfInterest = null;
 
     //Motor Setup
@@ -89,39 +91,61 @@ public class TileRunnerAuto extends LinearOpMode
 
     // Reverses the direction of the left motors, to allow a positive motor power to equal
     // forwards and a negative motor power to equal backwards
-    DcMotor frontRight, frontLeft, backRight, backLeft;
+    DcMotor frontRight, frontLeft, backRight, backLeft, armJoint1;
+    Servo armJoint2, claw;
 
 
 
 
+    public DcMotor initMotor(String motorName, DcMotor.Direction direction){
+        DcMotor motorVariable = hardwareMap.get(DcMotor.class, motorName);
+        motorVariable.setDirection(direction);
+        motorVariable.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorVariable.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorVariable.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        return motorVariable;
+    }
+    public DcMotor initMotor(String motorName){
+        DcMotor motorVariable = hardwareMap.get(DcMotor.class, motorName);
+        motorVariable.setDirection(FORWARD);
+        motorVariable.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorVariable.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorVariable.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        return motorVariable;
+    }
     @Override
     public void runOpMode()
     {
 
-        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
-        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
-        backRight = hardwareMap.get(DcMotor.class, "backRight");
-        backLeft = hardwareMap.get(DcMotor.class, "backLeft");
-        DcMotor[] listOfMotors = {frontRight, frontLeft, backRight, backLeft};
+        frontRight = initMotor("frontRight", REVERSE);
+        frontLeft = initMotor("frontLeft");
+        backRight = initMotor("backRight", REVERSE);
+        backLeft = initMotor("backLeft");
+        armJoint1 = initMotor("armJoint1");
 
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
+//        frontRight.setDirection(DcMotor.Direction.REVERSE);
+//        frontLeft.setDirection(DcMotor.Direction.FORWARD);
+//        backRight.setDirection(DcMotor.Direction.REVERSE);
+//        backLeft.setDirection(DcMotor.Direction.FORWARD);
+//
+//
+//        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//
+//        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//       armJoint1  = hardwareMap.get(DcMotor.class, "armJoint1");
+//        armJoint1.setDirection(DcMotor.Direction.FORWARD);
+        armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
+        claw = hardwareMap.get(Servo.class, "claw_servo");
 
-        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        frontRight.setDirection(DcMotor.Direction.FORWARD);
-        frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.FORWARD);
-        backLeft.setDirection(DcMotor.Direction.REVERSE);
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
@@ -245,7 +269,19 @@ public class TileRunnerAuto extends LinearOpMode
              * Insert your autonomous code here, presumably running some default configuration
              * since the tag was never sighted during INIT
              */
-            encoderDrive(DRIVE_SPEED, 1, 1, 2);
+
+            //Guessing Parking Zone 2 If Tag Not Found
+
+            encoderDrive(DRIVE_SPEED, 16, 16, 5);
+            turnDegreesLeft(DRIVE_SPEED, 30);
+            armJoint2.setPosition(1);
+            encoderIntake(DRIVE_SPEED, 1540, 2);
+            armJoint2.setPosition(0);
+            claw.setPosition(clawOpen);
+            armJoint2.setPosition(1);
+            claw.setPosition(clawClose);
+            encoderIntake(DRIVE_SPEED, 0, 2);
+            turnDegreesRight(DRIVE_SPEED, 30);
         }
         else
         {
@@ -275,6 +311,7 @@ public class TileRunnerAuto extends LinearOpMode
 
     void tagToTelemetry(AprilTagDetection detection, int parking_zone)
     {
+        telemetry.addData("Current Parking Zone: ", parking_zone);
         telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
         telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
         telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
@@ -296,136 +333,45 @@ public class TileRunnerAuto extends LinearOpMode
         telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
 
     }
-    public void turnLeft(double speed) {
-        int newLeftTarget;
-        int newRightTarget;
-        int newBackRightTarget;
-        int newBackLeftTarget;
-        double leftInches = 2.5, rightInches = -2.5;
-        int timeoutS = 2;
-        // Ensure that the opmode is still active
-        if (opModeIsActive()) {
+    public void turnDegreesRight(double speed, double degrees){
+        //Make these numbers the amount for a full 360 degree turn. CW direction in inches.
+        double fullTurnLeft = 64;//16 inches side length times 4
+        double fullTurnRight = -64;
 
-            // Determine new target position, and pass to motor controller
-            newLeftTarget = frontLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);
-            newRightTarget = frontRight.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
 
-            frontLeft.setTargetPosition(newLeftTarget);
-            frontRight.setTargetPosition(newRightTarget);
-            backLeft.setTargetPosition(newBackLeftTarget);
-            backRight.setTargetPosition(newBackRightTarget);
+        double turnAmount = degrees/360.0;//Convert degrees into a fraction.
 
-            // Turn On RUN_TO_POSITION
-            frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            // reset the timeout time and start motion.
-            runtime.reset();
-            frontLeft.setPower(Math.abs(speed));
-            frontRight.setPower(Math.abs(speed));
-            backLeft.setPower(Math.abs(speed));
-            backRight.setPower(Math.abs(speed));
-
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
-            while (opModeIsActive() &&
-                    (runtime.seconds() < timeoutS) &&
-                    (frontLeft.isBusy() && frontRight.isBusy() && backLeft.isBusy() && backRight.isBusy())) {
-
-                // Display it for the driver.
-                telemetry.addData("Running to", " %7d :%7d", newLeftTarget, newRightTarget);
-                telemetry.addData("Currently at", " at %7d :%7d",
-                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
-                telemetry.update();
-            }
-
-            // Stop all motion;
-            frontLeft.setPower(0);
-            frontRight.setPower(0);
-            backLeft.setPower(0);
-            backRight.setPower(0);
-
-            // Turn off RUN_TO_POSITION
-            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-            sleep(250);   // optional pause after each move.
-        }
+        fullTurnRight *= turnAmount;
+        fullTurnLeft *= turnAmount;
+        encoderDrive(speed, fullTurnLeft, fullTurnRight, 5);//Drives using encoder drive.
     }
-    public void turnRight(double speed) {
-        int newLeftTarget;
-        int newRightTarget;
-        int newBackRightTarget;
-        int newBackLeftTarget;
-        double leftInches = -7.5, rightInches = 7.5;
-        int timeoutS = 2;
-        // Ensure that the opmode is still active
-        if (opModeIsActive()) {
+    public void turnDegreesLeft(double speed, double degrees){
+        //Make these numbers the amount for a full 360 degree turn. CCW direction in inches.
+        double fullTurnLeft = -64;//16 inches side length times 4
+        double fullTurnRight = 64;
 
-            // Determine new target position, and pass to motor controller
-            newLeftTarget = frontLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);
-            newRightTarget = frontRight.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() + (int) (rightInches * COUNTS_PER_INCH);
 
-            frontLeft.setTargetPosition(newLeftTarget);
-            frontRight.setTargetPosition(newRightTarget);
-            backLeft.setTargetPosition(newBackLeftTarget);
-            backRight.setTargetPosition(newBackRightTarget);
+        double turnAmount = degrees/360.0;//Convert degrees into a fraction.
 
-            // Turn On RUN_TO_POSITION
-            frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        fullTurnRight *= turnAmount;
+        fullTurnLeft *= turnAmount;
+        encoderDrive(speed, fullTurnLeft, fullTurnRight, 5);//Drives using encoder drive.
+    }
+    public void encoderIntake(double speed, int ticks, double timeoutS){
 
-            // reset the timeout time and start motion.
-            runtime.reset();
-            frontLeft.setPower(Math.abs(speed));
-            frontRight.setPower(Math.abs(speed));
-            backLeft.setPower(Math.abs(speed));
-            backRight.setPower(Math.abs(speed));
+        if(opModeIsActive()){
+            armJoint1.setTargetPosition((ticks));
+            armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
-            while (opModeIsActive() &&
-                    (runtime.seconds() < timeoutS) &&
-                    (frontLeft.isBusy() && frontRight.isBusy() && backLeft.isBusy() && backRight.isBusy())) {
-
-                // Display it for the driver.
-                telemetry.addData("Running to", " %7d :%7d", newLeftTarget, newRightTarget);
-                telemetry.addData("Currently at", " at %7d :%7d",
-                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
-                telemetry.update();
+            double currentTime = getRuntime();
+            armJoint1.setPower(Math.abs(speed));
+            while (opModeIsActive() && getRuntime() - currentTime < timeoutS && isBusy(armJoint1, ticks)){
+                telemetry.addData("Position", armJoint1.getCurrentPosition());
             }
+            armJoint1.setPower(0);
+            armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-            // Stop all motion;
-            frontLeft.setPower(0);
-            frontRight.setPower(0);
-            backLeft.setPower(0);
-            backRight.setPower(0);
 
-            // Turn off RUN_TO_POSITION
-            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-            sleep(250);   // optional pause after each move.
         }
     }
     public void encoderDrive(double speed,
@@ -445,10 +391,10 @@ public class TileRunnerAuto extends LinearOpMode
             newBackLeftTarget = backLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
             newBackRightTarget = backRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
 
-            frontLeft.setTargetPosition(-newLeftTarget);
-            frontRight.setTargetPosition(-newRightTarget);
-            backLeft.setTargetPosition(-newBackLeftTarget);
-            backRight.setTargetPosition(-newBackRightTarget);
+            frontLeft.setTargetPosition(newLeftTarget);
+            frontRight.setTargetPosition(newRightTarget);
+            backLeft.setTargetPosition(newBackLeftTarget);
+            backRight.setTargetPosition(newBackRightTarget);
 
             // Turn On RUN_TO_POSITION
             frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -471,13 +417,20 @@ public class TileRunnerAuto extends LinearOpMode
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
             while (opModeIsActive() &&
                     (runtime.seconds() < timeoutS) &&
-                    (frontLeft.isBusy() && frontRight.isBusy() && backLeft.isBusy() && backRight.isBusy())) {
+                    (isBusy(backRight, -newBackRightTarget) && isBusy(backLeft, -newBackLeftTarget) && isBusy(frontRight, -newRightTarget) && isBusy(frontLeft, -newLeftTarget))) {
 
                 // Display it for the driver.
                 telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
                 telemetry.addData("Currently at",  " at %7d :%7d",
                         frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
+                telemetry.addData("Direction BLeft", backLeft.getDirection());
+                telemetry.addData("Direction FLeft", frontLeft.getDirection());
+
+                telemetry.addData("Direction bRight", backRight.getDirection());
+                telemetry.addData("Direction fRight", frontRight.getDirection());
+
                 telemetry.update();
+
             }
 
             // Stop all motion;
@@ -495,5 +448,8 @@ public class TileRunnerAuto extends LinearOpMode
             sleep(250);   // optional pause after each move.
         }
 
+    }
+    public boolean isBusy(DcMotor motor, int position){
+        return Math.abs(motor.getCurrentPosition()) < Math.abs(position);
     }
 }
