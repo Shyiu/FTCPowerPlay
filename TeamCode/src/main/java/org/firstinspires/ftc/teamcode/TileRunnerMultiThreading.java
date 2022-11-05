@@ -19,7 +19,7 @@ public class TileRunnerMultiThreading extends ThreadOpMode {
     int current_level = 0;
     @Override
     public void mainInit() {
-        armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
+        armJoint1 = hardwareMap.get(DcMotor.class, "armJoint1");
         armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
         claw = hardwareMap.get(Servo.class, "claw_servo");
 
