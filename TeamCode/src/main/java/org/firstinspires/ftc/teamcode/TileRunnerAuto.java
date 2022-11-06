@@ -45,7 +45,7 @@ public class TileRunnerAuto extends LinearOpMode
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
     final double[] SERVO_POS = {.58,1,.22,0};
-    final int cornerTurn = 1020;
+    final int cornerTurn = 1004;//1020
 
 
     static final double FEET_PER_METER = 3.28084;
@@ -255,50 +255,34 @@ public class TileRunnerAuto extends LinearOpMode
              */
 
             //Guessing Parking Zone 2 If Tag Not Found
+            normalDrive();
 
-            encoderDrive(DRIVE_SPEED, 20, 20, 5);
-            armJoint2.setPosition(1);
-
-            encoderIntake(DRIVE_SPEED, 1540, 2);
-            armJoint2.setPosition(0);
-            sleep(500);
-            turnDegrees(DRIVE_SPEED, -30);
-            sleep(500);
-            claw.setPosition(clawOpen);
-            sleep(500);
-            armJoint2.setPosition(1);
-            sleep(100);
-            claw.setPosition(clawClose);
-            sleep(250);
-            encoderIntake(DRIVE_SPEED, 0, 2);
-            sleep(250);
-            turnDegrees(DRIVE_SPEED, 30);
 
         }
         else
         {
             if (parking_zone == 2){
-                encoderDrive(DRIVE_SPEED, 12, 12, 2);//
+                normalDrive();
 
             }
 
 
             if (parking_zone == 1){
-                encoderDrive(DRIVE_SPEED, 12, 12, 2);
-
-                encoderDrive(DRIVE_SPEED,-8,8,2);
-                encoderDrive(DRIVE_SPEED, 12, 12, 2);
+                normalDrive();
+                turnDegrees(DRIVE_SPEED, -60);
+                sleep(250);
+                encoderDrive(DRIVE_SPEED, 20,20,5);
+                sleep(250);
 
             }
             if (parking_zone == 3){
-                encoderDrive(DRIVE_SPEED, 12, 12, 2);
-                encoderDrive(DRIVE_SPEED,8,-8,2);
-                encoderDrive(DRIVE_SPEED, 12, 12, 2);
+                normalDrive();
+                turnDegrees(DRIVE_SPEED, 200);
+                sleep(250);
+                encoderDrive(DRIVE_SPEED, 20,20,5);
+                sleep(250);
             }
         }
-
-
-        /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
     }
 
     void tagToTelemetry(AprilTagDetection detection, int parking_zone)
@@ -341,13 +325,11 @@ public class TileRunnerAuto extends LinearOpMode
     public void encoderIntake(double speed, int ticks, double timeoutS){
 
         if(opModeIsActive()){
-            armJoint1.setTargetPosition((ticks));
-            armJoint1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
             double currentTime = getRuntime();
             armJoint1.setPower(Math.abs(speed));
             sleep(250);
-            while (opModeIsActive() && getRuntime() - currentTime < timeoutS && isBusy(armJoint1, ticks)){
+            boolean direction = checkMotion(armJoint1);
+            while (opModeIsActive() && getRuntime() - currentTime < timeoutS && isBusy(armJoint1, ticks, direction)){
                 telemetry.addData("Position", armJoint1.getCurrentPosition());
             }
             armJoint1.setPower(0);
@@ -378,16 +360,16 @@ public class TileRunnerAuto extends LinearOpMode
             // reset the timeout time and start motion.
             runtime.reset();
             if (rightInches < 0) {
-                frontLeft.setPower(.5);
-                frontRight.setPower(-.5);
-                backLeft.setPower(.5);
-                backRight.setPower(-.5);
+                frontLeft.setPower(TURN_SPEED);
+                frontRight.setPower(-TURN_SPEED);
+                backLeft.setPower(TURN_SPEED);
+                backRight.setPower(-TURN_SPEED);
             }
             else{
-                frontLeft.setPower(-.5);
-                frontRight.setPower(.5);
-                backLeft.setPower(-.5);
-                backRight.setPower(.5);
+                frontLeft.setPower(-TURN_SPEED);
+                frontRight.setPower(TURN_SPEED);
+                backLeft.setPower(-TURN_SPEED);
+                backRight.setPower(TURN_SPEED);
             }
 
             // keep looping while we are still active, and there is time left, and both motors are running.
@@ -398,7 +380,7 @@ public class TileRunnerAuto extends LinearOpMode
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
 
             sleep(250);
-            while (opModeIsActive() &&
+            while (opModeIsActive() && runtime.seconds() < timeoutS &&
                     (isBusy(backRight, -newBackRightTarget) && isBusy(backLeft, -newBackLeftTarget) && isBusy(frontRight, -newRightTarget) && isBusy(frontLeft, -newLeftTarget))) {
 
                 // Display it for the driver.
@@ -441,6 +423,7 @@ public class TileRunnerAuto extends LinearOpMode
         int newBackLeftTarget;
 
         // Ensure that the opmode is still active
+
         if (opModeIsActive()) {
 
             // Determine new target position, and pass to motor controller
@@ -474,9 +457,13 @@ public class TileRunnerAuto extends LinearOpMode
             // However, if you require that BOTH motors have finished their moves before the robot continues
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
 
+            boolean direction1 = checkMotion(backRight);
+            boolean direction2 = checkMotion(backLeft);
+            boolean direction3 = checkMotion(frontRight);
+            boolean direction4 = checkMotion(frontLeft);
+            sleep(250);
             while (opModeIsActive() &&
-                    (runtime.seconds() < timeoutS) &&
-                    (isBusy(backRight, -newBackRightTarget) && isBusy(backLeft, -newBackLeftTarget) && isBusy(frontRight, -newRightTarget) && isBusy(frontLeft, -newLeftTarget))) {
+                    (isBusy(backRight, -newBackRightTarget, direction1) && isBusy(backLeft, -newBackLeftTarget, direction2) && isBusy(frontRight, -newRightTarget, direction3) && isBusy(frontLeft, -newLeftTarget, direction4))) {
 
                 // Display it for the driver.
                 telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
@@ -508,7 +495,42 @@ public class TileRunnerAuto extends LinearOpMode
         }
 
     }
+    public void normalDrive(){
+        encoderDrive(DRIVE_SPEED, 20, 20, 5);
+        armJoint2.setPosition(1);
+
+        encoderIntake(DRIVE_SPEED, 1540, 2);
+        armJoint2.setPosition(0);
+        sleep(500);
+        turnDegrees(DRIVE_SPEED, -5);
+        sleep(500);
+        claw.setPosition(clawOpen);
+        sleep(500);
+        armJoint2.setPosition(1);
+        sleep(100);
+        claw.setPosition(clawClose);
+        sleep(250);
+        encoderIntake(DRIVE_SPEED, 0, 2);
+        sleep(250);
+        turnDegrees(DRIVE_SPEED, 5);
+    }
+    public boolean checkMotion(DcMotor motor){
+        int currentPosition = motor.getCurrentPosition();
+        sleep(100);
+        return currentPosition < motor.getCurrentPosition();
+    }
+    public boolean isBusy(DcMotor motor, int position, boolean greater){
+        if (!greater){
+            return Math.abs(motor.getCurrentPosition()) < Math.abs(position);
+        }
+        else{
+            return Math.abs(motor.getCurrentPosition()) > Math.abs(position);
+        }
+
+    }
     public boolean isBusy(DcMotor motor, int position){
-        return Math.abs(motor.getCurrentPosition()) < Math.abs(position);
+            return Math.abs(motor.getCurrentPosition()) > Math.abs(position);
+
+
     }
 }
