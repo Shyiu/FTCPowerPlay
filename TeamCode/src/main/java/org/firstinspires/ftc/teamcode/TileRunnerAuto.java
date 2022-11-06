@@ -45,7 +45,7 @@ public class TileRunnerAuto extends LinearOpMode
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
     final double[] SERVO_POS = {.58,1,.22,0};
-    final int cornerTurn = 1004;//1020
+    final int cornerTurn = 1236;//1020
 
 
     static final double FEET_PER_METER = 3.28084;
@@ -93,8 +93,8 @@ public class TileRunnerAuto extends LinearOpMode
     // Reverses the direction of the left motors, to allow a positive motor power to equal
     // forwards and a negative motor power to equal backwards
     DcMotor frontRight, frontLeft, backRight, backLeft, armJoint1;
-    Servo armJoint2, claw;
-
+    Servo claw;
+    Servo armJoint2;
 
 
 
@@ -262,22 +262,28 @@ public class TileRunnerAuto extends LinearOpMode
         else
         {
             if (parking_zone == 2){
-                normalDrive();
+//                normalDrive();
+                encoderDrive(DRIVE_SPEED, 25, 25,5);
 
             }
 
 
             if (parking_zone == 1){
-                normalDrive();
-                turnDegrees(DRIVE_SPEED, -60);
+//                normalDrive();
+                encoderDrive(DRIVE_SPEED, 20, 20,5);
                 sleep(250);
-                encoderDrive(DRIVE_SPEED, 20,20,5);
+                turnDegrees(DRIVE_SPEED, -90);
                 sleep(250);
+                encoderDrive(DRIVE_SPEED, 20, 20,5);
+                sleep(250);
+//
+
 
             }
             if (parking_zone == 3){
-                normalDrive();
-                turnDegrees(DRIVE_SPEED, 200);
+                encoderDrive(DRIVE_SPEED, 20, 20,5);
+                sleep(250);
+                turnDegrees(DRIVE_SPEED, 90);
                 sleep(250);
                 encoderDrive(DRIVE_SPEED, 20,20,5);
                 sleep(250);
@@ -346,6 +352,17 @@ public class TileRunnerAuto extends LinearOpMode
 
         // Ensure that the opmode is still active
         if (opModeIsActive()) {
+
+            frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
 
             // Determine new target position, and pass to motor controller
             newLeftTarget = frontLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
@@ -425,6 +442,15 @@ public class TileRunnerAuto extends LinearOpMode
         // Ensure that the opmode is still active
 
         if (opModeIsActive()) {
+            frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
             // Determine new target position, and pass to motor controller
             newLeftTarget = frontLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
@@ -502,7 +528,7 @@ public class TileRunnerAuto extends LinearOpMode
         encoderIntake(DRIVE_SPEED, 1540, 2);
         armJoint2.setPosition(0);
         sleep(500);
-        turnDegrees(DRIVE_SPEED, -5);
+        turnDegrees(DRIVE_SPEED, -10);
         sleep(500);
         claw.setPosition(clawOpen);
         sleep(500);
@@ -512,7 +538,7 @@ public class TileRunnerAuto extends LinearOpMode
         sleep(250);
         encoderIntake(DRIVE_SPEED, 0, 2);
         sleep(250);
-        turnDegrees(DRIVE_SPEED, 5);
+        turnDegrees(DRIVE_SPEED, 10);
     }
     public boolean checkMotion(DcMotor motor){
         int currentPosition = motor.getCurrentPosition();
@@ -529,7 +555,7 @@ public class TileRunnerAuto extends LinearOpMode
 
     }
     public boolean isBusy(DcMotor motor, int position){
-            return Math.abs(motor.getCurrentPosition()) > Math.abs(position);
+            return Math.abs(motor.getCurrentPosition()) < Math.abs(position);
 
 
     }
