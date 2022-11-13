@@ -21,7 +21,6 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -29,10 +28,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
@@ -40,8 +35,8 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Tilerunner Auto Right Side", group = "Tilerunner")
-public class TileRunnerAuto extends LinearOpMode
+@Autonomous(name = "Tilerunner Auto Left Side", group = "Tilerunner")
+public class TileRunnerAutoLeft extends LinearOpMode
 {
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
@@ -100,9 +95,6 @@ public class TileRunnerAuto extends LinearOpMode
     DcMotor frontRight, frontLeft, backRight, backLeft, armJoint1;
     Servo claw;
     Servo armJoint2;
-    BNO055IMU imu;
-    Orientation             lastAngles = new Orientation();
-    double                  globalAngle, power = .5, correction;
 
 
 
@@ -138,34 +130,6 @@ public class TileRunnerAuto extends LinearOpMode
         claw = hardwareMap.get(Servo.class, "claw_servo");
         armJoint2.setPosition(1);
         claw.setPosition(1);
-
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-
-        parameters.mode                = BNO055IMU.SensorMode.IMU;
-        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.loggingEnabled      = false;
-
-        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
-        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
-        // and named "imu".
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-
-        imu.initialize(parameters);
-
-        telemetry.addData("Mode", "calibrating...");
-        telemetry.update();
-
-        // make sure the imu gyro is calibrated before continuing.
-        while (!isStopRequested() && !imu.isGyroCalibrated())
-        {
-            sleep(50);
-            idle();
-        }
-
-        telemetry.addData("Mode", "waiting for start");
-        telemetry.addData("imu calib status", imu.getCalibrationStatus().toString());
-        telemetry.update();
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
@@ -292,43 +256,36 @@ public class TileRunnerAuto extends LinearOpMode
 
             //Guessing Parking Zone 2 If Tag Not Found
             normalDrive();
-//            encoderDrive(DRIVE_SPEED,20,20,3);
-//            turnDegrees(TURN_SPEED, 90);
+
 
         }
         else
         {
             if (parking_zone == 2){
 //                normalDrive();
-                encoderDrive(DRIVE_SPEED, 25, 25,5);
+                encoderDrive(DRIVE_SPEED, 25, 24,5);
 
             }
 
 
-            if (parking_zone == 1){
+            if (parking_zone == 3){
 //                normalDrive();
-                encoderDrive(DRIVE_SPEED, 40, 40,5);
+                encoderDrive(DRIVE_SPEED, 22, 22,5);
                 sleep(250);
-                turnDegrees(DRIVE_SPEED, -90);
+                turnDegrees(DRIVE_SPEED, 75);
                 sleep(250);
                 encoderDrive(DRIVE_SPEED, 21, 21,5);
                 sleep(250);
-                turnDegrees(DRIVE_SPEED, -90);
-                sleep(250);
-                encoderDrive(DRIVE_SPEED, 21,21,5);
 //Add Code to face towards the middle for teleop to allow for easiest change.
 
             }
-            if (parking_zone == 3){
-                encoderDrive(DRIVE_SPEED, 40, 40,5);
+            if (parking_zone == 1){
+                encoderDrive(DRIVE_SPEED, 22, 22,5);
                 sleep(250);
-                turnDegrees(DRIVE_SPEED, 90);
+                turnDegrees(DRIVE_SPEED, -87);
                 sleep(250);
-                encoderDrive(DRIVE_SPEED, 21,21,5);
+                encoderDrive(DRIVE_SPEED, 22,22,5);
                 sleep(250);
-                turnDegrees(DRIVE_SPEED, 90);
-                sleep(250);
-                encoderDrive(DRIVE_SPEED, 21,21,5);
             }
         }
     }
@@ -337,35 +294,47 @@ public class TileRunnerAuto extends LinearOpMode
     {
         telemetry.addData("Current Parking Zone: ", parking_zone);
         telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
-//        telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
-//        telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
-//        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
-//        telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
-//        telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
-//        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
+        telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
+        telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
+        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
+        telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
+        telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
+        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
         telemetry.addData("Current Parking Zone: ", parking_zone);
 
     }
     void tagToTelemetry(AprilTagDetection detection)
     {
         telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
-//        telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
-//        telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
-//        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
-//        telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
-//        telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
-//        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
+        telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
+        telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
+        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
+        telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
+        telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
+        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
 
+    }
+    public void turnDegrees(double speed, double degrees){
+        double fullTurnLeft = cornerTurn/COUNTS_PER_INCH * 4;
+        double fullTurnRight = -cornerTurn/COUNTS_PER_INCH * 4;
+
+
+        double turnAmount = degrees/360.0;//Convert degrees into a fraction.
+
+        fullTurnRight *= turnAmount;
+        fullTurnLeft *= turnAmount;
+
+        turn(speed, fullTurnLeft, fullTurnRight, 5);
     }
 
     public void encoderIntake(double speed, int ticks, double timeoutS){
 
         if(opModeIsActive()){
             double currentTime = getRuntime();
-
-            boolean dir = mode(armJoint1, ticks);
-            armJoint1.setPower(speedConversion(dir, speed));
-            while (opModeIsActive() && getRuntime() - currentTime < timeoutS && isBusy(armJoint1, ticks, dir)){
+            armJoint1.setPower(Math.abs(speed));
+            sleep(250);
+            boolean direction = checkMotion(armJoint1);
+            while (opModeIsActive() && getRuntime() - currentTime < timeoutS && isBusy(armJoint1, ticks, direction)){
                 telemetry.addData("Position", armJoint1.getCurrentPosition());
             }
             armJoint1.setPower(0);
@@ -374,113 +343,91 @@ public class TileRunnerAuto extends LinearOpMode
 
         }
     }
-    private void resetAngle()
-    {
-        lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+    public void turn(double speed, double leftInches, double rightInches, double timeoutS){
+        int newLeftTarget;
+        int newRightTarget;
+        int newBackRightTarget;
+        int newBackLeftTarget;
 
-        globalAngle = 0;
-    }
-    private double getAngle()
-    {
-        // We experimentally determined the Z axis is the axis we want to use for heading angle.
-        // We have to process the angle because the imu works in euler angles so the Z axis is
-        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
-        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
+        // Ensure that the opmode is still active
+        if (opModeIsActive()) {
 
-        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
-
-        if (deltaAngle < -180)
-            deltaAngle += 360;
-        else if (deltaAngle > 180)
-            deltaAngle -= 360;
-
-        globalAngle += deltaAngle;
-
-        lastAngles = angles;
-
-        return globalAngle;
-    }
-    private double checkDirection()
-    {
-        // The gain value determines how sensitive the correction is to direction changes.
-        // You will have to experiment with your robot to get small smooth direction changes
-        // to stay on a straight line.
-        double correction, angle, gain = .10;
-
-        angle = getAngle();
-
-        if (angle == 0)
-            correction = 0;             // no adjustment.
-        else
-            correction = -angle;        // reverse sign of angle for correction.
-
-        correction = correction * gain;
-
-        return correction;
-    }
-
-    private void turnDegrees(double power, int degrees)
-    {
-        double  leftPower, rightPower;
-
-        // restart imu movement tracking.
-        resetAngle();
-
-        // getAngle() returns + when rotating counter clockwise (left) and - when rotating
-        // clockwise (right).
-
-        if (degrees < 0)
-        {   // turn left.
-            leftPower = -power;
-            rightPower = power;
-        }
-        else if (degrees > 0)
-        {   // turn right.
-            leftPower = power;
-            rightPower = -power;
-        }
-        else return;
-
-        // set power to rotate.
-        frontLeft.setPower(leftPower);
-        backLeft.setPower(leftPower);
-        frontRight.setPower(rightPower);
-        backRight.setPower(rightPower);
-        // rotate until turn is completed.
-
-        if (degrees > 0)
-        {
-            // On right turn we have to get off zero first.
+            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
-            while (opModeIsActive() && -getAngle() < degrees) {
-                telemetry.addData("Angle", -getAngle());
-                telemetry.addData("Target", degrees);
+            // Determine new target position, and pass to motor controller
+            newLeftTarget = frontLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
+            newRightTarget = frontRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
+            newBackLeftTarget = backLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
+            newBackRightTarget = backRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
+
+
+            // Turn On RUN_TO_POSITION
+
+
+            // reset the timeout time and start motion.
+            runtime.reset();
+            if (rightInches < 0) {
+                frontLeft.setPower(TURN_SPEED);
+                frontRight.setPower(-TURN_SPEED);
+                backLeft.setPower(TURN_SPEED);
+                backRight.setPower(-TURN_SPEED);
+            }
+            else{
+                frontLeft.setPower(-TURN_SPEED);
+                frontRight.setPower(TURN_SPEED);
+                backLeft.setPower(-TURN_SPEED);
+                backRight.setPower(TURN_SPEED);
+            }
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+
+            sleep(250);
+            while (opModeIsActive() && runtime.seconds() < timeoutS &&
+                    (isBusy(backRight, -newBackRightTarget) && isBusy(backLeft, -newBackLeftTarget) && isBusy(frontRight, -newRightTarget) && isBusy(frontLeft, -newLeftTarget))) {
+
+                // Display it for the driver.
+                telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
+                telemetry.addData("Currently at",  " at %7d :%7d",
+                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
+                telemetry.addData("Direction BLeft", backLeft.getDirection());
+                telemetry.addData("Direction FLeft", frontLeft.getDirection());
+
+                telemetry.addData("Direction bRight", backRight.getDirection());
+                telemetry.addData("Direction fRight", frontRight.getDirection());
+
                 telemetry.update();
 
-
             }
+
+            // Stop all motion;
+            frontLeft.setPower(0);
+            frontRight.setPower(0);
+            backLeft.setPower(0);
+            backRight.setPower(0);
+
+            // Turn off RUN_TO_POSITION
+            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            sleep(250);   // optional pause after each move.
         }
-        else { // left turn.
-            while (opModeIsActive() && getAngle() == 0) {
-            }
 
-            while (opModeIsActive() && -getAngle() > degrees) {
-            }
-        }
-        // turn the motors off.
-        frontRight.setPower(0);
-        frontLeft.setPower(0);
-        backRight.setPower(0);
-        backLeft.setPower(0);
-
-        // wait for rotation to stop.
-        sleep(1000);
-
-        // reset angle tracking on new heading.
-        resetAngle();
     }
 
     public void encoderDrive(double speed,
@@ -510,9 +457,23 @@ public class TileRunnerAuto extends LinearOpMode
             newBackLeftTarget = backLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
             newBackRightTarget = backRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
 
+            frontLeft.setTargetPosition(newLeftTarget);
+            frontRight.setTargetPosition(newRightTarget);
+            backLeft.setTargetPosition(newBackLeftTarget);
+            backRight.setTargetPosition(newBackRightTarget);
+
+            // Turn On RUN_TO_POSITION
+            frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
             // reset the timeout time and start motion.
-
+            runtime.reset();
+            frontLeft.setPower(Math.abs(speed));
+            frontRight.setPower(Math.abs(speed));
+            backLeft.setPower(Math.abs(speed));
+            backRight.setPower(Math.abs(speed));
 
             // keep looping while we are still active, and there is time left, and both motors are running.
             // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
@@ -520,31 +481,25 @@ public class TileRunnerAuto extends LinearOpMode
             // always end the motion as soon as possible.
             // However, if you require that BOTH motors have finished their moves before the robot continues
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
-            Boolean mode1 = mode(backRight, newBackRightTarget);
-            Boolean mode2 = mode(backLeft, newBackLeftTarget);
-            Boolean mode3 = mode(frontRight, newRightTarget);
-            Boolean mode4 = mode(frontLeft, newLeftTarget);
 
-            runtime.reset();
-            frontLeft.setPower(speedConversion(mode1, speed));
-            frontRight.setPower(speedConversion(mode2, speed));
-            backLeft.setPower(speedConversion(mode3, speed));
-            backRight.setPower(speedConversion(mode4, speed));
-
+            boolean direction1 = checkMotion(backRight);
+            boolean direction2 = checkMotion(backLeft);
+            boolean direction3 = checkMotion(frontRight);
+            boolean direction4 = checkMotion(frontLeft);
+            sleep(250);
             while (opModeIsActive() &&
-                    (isBusy(backRight, newBackRightTarget, mode1) && isBusy(backLeft, newBackLeftTarget, mode2) && isBusy(frontRight, newRightTarget, mode3) && isBusy(frontLeft, newLeftTarget, mode4))) {
-                correction = checkDirection();
-
-                frontLeft.setPower(speed - correction);
-                frontRight.setPower(speed + correction);
-                backLeft.setPower(speed - correction);
-                backRight.setPower(speed + correction);
+                    (isBusy(backRight, -newBackRightTarget, direction1) && isBusy(backLeft, -newBackLeftTarget, direction2) && isBusy(frontRight, -newRightTarget, direction3) && isBusy(frontLeft, -newLeftTarget, direction4))) {
 
                 // Display it for the driver.
                 telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
                 telemetry.addData("Currently at",  " at %7d :%7d",
                         frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
-                telemetry.addData("Inverse Current Position", frontLeft.getCurrentPosition() * -1);
+                telemetry.addData("Direction BLeft", backLeft.getDirection());
+                telemetry.addData("Direction FLeft", frontLeft.getDirection());
+
+                telemetry.addData("Direction bRight", backRight.getDirection());
+                telemetry.addData("Direction fRight", frontRight.getDirection());
+
                 telemetry.update();
 
             }
@@ -566,54 +521,41 @@ public class TileRunnerAuto extends LinearOpMode
 
     }
     public void normalDrive(){
-        encoderDrive(DRIVE_SPEED, 18, 18, 5);
+        encoderDrive(DRIVE_SPEED, 20, 20, 5);
         armJoint2.setPosition(1);
 
-        encoderIntake(DRIVE_SPEED, 1840, 2);
-        sleep(500);
+        encoderIntake(DRIVE_SPEED, 1540, 2);
         armJoint2.setPosition(0);
-        encoderIntake(DRIVE_SPEED, 2040, 2);
-        sleep(250);
-        encoderIntake(DRIVE_SPEED, 1840,2);
         sleep(500);
-        turnDegrees(DRIVE_SPEED, -25);
+        turnDegrees(DRIVE_SPEED, 15);
         sleep(500);
         claw.setPosition(clawOpen);
         sleep(500);
         armJoint2.setPosition(1);
-        sleep(500);
-        turnDegrees(DRIVE_SPEED, 25);
         sleep(100);
         claw.setPosition(clawClose);
         sleep(250);
         encoderIntake(DRIVE_SPEED, 0, 2);
         sleep(250);
-
+        turnDegrees(DRIVE_SPEED, -15);
     }
-
-    public boolean mode(DcMotor motor, int position){
-        return -motor.getCurrentPosition() < position;
+    public boolean checkMotion(DcMotor motor){
+        int currentPosition = motor.getCurrentPosition();
+        sleep(100);
+        return currentPosition < motor.getCurrentPosition();
     }
-    public boolean isBusy(DcMotor motor, int position, boolean mode){
-        int motorPos = -motor.getCurrentPosition();
-        telemetry.addData("Motor Position", motorPos);
-        telemetry.addData("Position", position);
-        telemetry.update();
-        if (mode){
-            return motorPos < position;
+    public boolean isBusy(DcMotor motor, int position, boolean greater){
+        if (!greater){
+            return Math.abs(motor.getCurrentPosition()) < Math.abs(position);
         }
         else{
-            return motorPos > position;
+            return Math.abs(motor.getCurrentPosition()) > Math.abs(position);
         }
 
     }
-    public double speedConversion(Boolean mode, double speed){
-        if (mode){
-            return (speed);
-        }
-        else{
-            return (-speed);
-        }
+    public boolean isBusy(DcMotor motor, int position){
+            return Math.abs(motor.getCurrentPosition()) < Math.abs(position);
+
 
     }
 }
