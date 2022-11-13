@@ -34,8 +34,8 @@ public class SkystoneTeleOp extends ThreadOpMode {
 
         slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        double flapUp = .78;
-        double flapDown = 1;
+        double flapUp = 1;
+        double flapDown = .5;
 
         slidesPosition = slides.getCurrentPosition();
 
@@ -43,7 +43,7 @@ public class SkystoneTeleOp extends ThreadOpMode {
         slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         moveSlides(BOTTOM_HARDSTOP);
 
-        flapper.setPosition(flapDown);
+        flapper.setPosition(flapUp);
 
         // Pulls the motors from the robot configuration so that they can be manipulated
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");

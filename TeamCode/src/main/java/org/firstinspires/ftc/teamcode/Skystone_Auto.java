@@ -88,8 +88,8 @@ public class Skystone_Auto extends LinearOpMode
     static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
 
     int parking_zone = 2;
-    double clawOpen = .78;
-    double clawClose = 1;
+    double flapDown = .5;
+    double flapUp = 1;
     AprilTagDetection tagOfInterest = null;
 
     //Motor Setup
@@ -134,7 +134,7 @@ public class Skystone_Auto extends LinearOpMode
 //        armJoint1 = initMotor("armJoint1", REVERSE);
 //
 //        armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
-//        claw = hardwareMap.get(Servo.class, "claw_servo");
+        flapper = hardwareMap.get(Servo.class, "flapper_servo");
 //        armJoint2.setPosition(1);
 //        claw.setPosition(1);
 
@@ -300,6 +300,7 @@ public class Skystone_Auto extends LinearOpMode
             if (parking_zone == 2){
 //                normalDrive();
                 encoderDrive(DRIVE_SPEED, 25, 25,5);
+                turnDegrees(DRIVE_SPEED, 180);
 
             }
 
