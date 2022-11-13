@@ -18,7 +18,7 @@ public class Testing_Servo extends LinearOpMode {
     public void runOpMode(){
         telemetry.addLine("Gamepad1 Controls:\nx:0.1\ny:0.01\n:a:-0.1\nb:-0.01");
         telemetry.update();
-        testingServo = hardwareMap.get(Servo.class, "claw_servo");//change name to servo that is being tested.
+        testingServo = hardwareMap.get(Servo.class, "flapper_servo");//change name to servo that is being tested.
 
         waitForStart();
 

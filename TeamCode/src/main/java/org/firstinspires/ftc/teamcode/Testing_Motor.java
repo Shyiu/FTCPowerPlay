@@ -23,46 +23,22 @@ public class Testing_Motor extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        telemetry.addLine("Gamepad2 Controls:\nUp Arrow and Down Arrow for positions");
-        telemetry.update();
-        testingMotor = hardwareMap.get(DcMotor.class, "joint_motor");//change name to servo that is being tested.
+        testingMotor = hardwareMap.get(DcMotor.class, "slides");//change name to servo that is being tested.
         testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         testingMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         telemetry.addLine(testingMotor.getCurrentPosition() + "");
         telemetry.update();
         waitForStart();
+
+
         while (opModeIsActive() && !isStopRequested()) {
             telemetry.addLine(testingMotor.getCurrentPosition() + "");
-            if (gamepad2.dpad_up) {
-                if (!(current_level == LEVELS.length - 1)) {
-                    current_level++;
-                    encoderDrive(LEVELS[current_level]);
-                }
-                while (gamepad2.dpad_up) {
-                    ;
-                }
-            }
-            if (gamepad2.dpad_down) {
-                if (!(current_level == 0)) {
-                    current_level--;
-                    testingMotor.setTargetPosition(LEVELS[current_level]);
-                    encoderDrive(LEVELS[current_level]);
-                }
-                while (gamepad2.dpad_down) {
-                    ;
-                }
-            }
+            testingMotor.setPower(gamepad1.left_stick_y/3.0);
+            telemetry.addLine("Gamepad1 Controls:\nLeft Stick Y Moves Motor");
+            telemetry.addData("Slide Position", testingMotor.getCurrentPosition());
             telemetry.update();
-//
-//        }
-//            testingMotor.setPower(gamepad1.left_stick_y/3.0);
-//            telemetry.addLine("Gamepad1 Controls:\nLeft Stick Y Moves Motor");
-//            telemetry.addData("Servo Position", testingMotor.getCurrentPosition());
-//            telemetry.update();
-//
         }
-//    }
     }
 
     public void encoderDrive(int ticks) {
