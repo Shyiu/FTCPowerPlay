@@ -97,9 +97,8 @@ public class Skystone_Auto extends LinearOpMode
 
     // Reverses the direction of the left motors, to allow a positive motor power to equal
     // forwards and a negative motor power to equal backwards
-    DcMotor frontRight, frontLeft, backRight, backLeft, armJoint1;
-    Servo claw;
-    Servo armJoint2;
+    DcMotor frontRight, frontLeft, backRight, backLeft, slides;
+    Servo flapper;
     BNO055IMU imu;
     Orientation             lastAngles = new Orientation();
     double                  globalAngle, power = .5, correction;
@@ -363,13 +362,13 @@ public class Skystone_Auto extends LinearOpMode
         if(opModeIsActive()){
             double currentTime = getRuntime();
 
-            boolean dir = mode(armJoint1, ticks);
-            armJoint1.setPower(speedConversion(dir, speed));
-            while (opModeIsActive() && getRuntime() - currentTime < timeoutS && isBusy(armJoint1, ticks, dir)){
-                telemetry.addData("Position", armJoint1.getCurrentPosition());
+            boolean dir = mode(slides, ticks);
+            slides.setPower(speedConversion(dir, speed));
+            while (opModeIsActive() && getRuntime() - currentTime < timeoutS && isBusy(slides, ticks, dir)){
+                telemetry.addData("Position", slides.getCurrentPosition());
             }
-            armJoint1.setPower(0);
-            armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            slides.setPower(0);
+            slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
         }

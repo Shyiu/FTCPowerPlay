@@ -17,12 +17,13 @@ public class SkystoneTeleOp extends ThreadOpMode {
 
 
     //Slide Related Variables
-    final double[] SLIDE_POSITIONS = {0,100,200,300,400,500,600,700,800};
+    final int TOP_HARDSTOP = 2000;
+    final int BOTTOM_HARDSTOP = 100;
+
+    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP,100,200,300,400,500,600,700, TOP_HARDSTOP};
     int slideIndex = 0;
     double slidesPosition = 0;
     final double SLIDE_POWER = .1;
-    final int TOP_HARDSTOP = 2000;
-    final int BOTTOM_HARDSTOP = 100;
 
 
     @Override
@@ -101,7 +102,15 @@ public class SkystoneTeleOp extends ThreadOpMode {
             @Override
             public void loop() {
                 double slidePower = -gamepad2.left_stick_y;
-                slides.setPower(slidePower);
+                if (slides.getCurrentPosition() > BOTTOM_HARDSTOP && slidePower < 0)
+                    slides.setPower(slidePower);
+                else
+                    slides.setPower(0);
+
+                if (slides.getCurrentPosition() < TOP_HARDSTOP && slidePower > 0)
+                    slides.setPower(slidePower);
+                else
+                    slides.setPower(0);
 
                 if (gamepad2.dpad_up){
                     if (slideIndex < SLIDE_POSITIONS.length - 1){
@@ -149,6 +158,7 @@ public class SkystoneTeleOp extends ThreadOpMode {
             return -1 * Math.sqrt((-1*value));
         }
     }
+
     public void moveSlides(double target){
         int currentPos = slides.getCurrentPosition();
         if (currentPos > target){
