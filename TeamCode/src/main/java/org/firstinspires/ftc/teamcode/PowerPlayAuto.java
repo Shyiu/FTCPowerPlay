@@ -41,7 +41,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import java.util.ArrayList;
 
 @Autonomous(name = "Skystone Auto", group = "Skystone")
-public class Skystone_Auto extends LinearOpMode
+public class PowerPlayAuto extends LinearOpMode
 {
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
@@ -50,8 +50,7 @@ public class Skystone_Auto extends LinearOpMode
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
     final double[] SERVO_POS = {.58,1,.22,0};
-    final int cornerTurn = 1156;//1020
-
+    final public PowerplayBot names = new PowerplayBot();
 
     static final double FEET_PER_METER = 3.28084;
 
@@ -88,8 +87,8 @@ public class Skystone_Auto extends LinearOpMode
     static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
 
     int parking_zone = 2;
-    double flapDown = .5;
-    double flapUp = 1;
+    double flapDown = .43;
+    double flapUp = .33;
     AprilTagDetection tagOfInterest = null;
 
     //Motor Setup
@@ -101,8 +100,8 @@ public class Skystone_Auto extends LinearOpMode
     Servo flapper;
     BNO055IMU imu;
     Orientation             lastAngles = new Orientation();
-    double                  globalAngle, power = .5, correction;
-
+    double                  globalAngle, power = .5, correction, rotation;
+    PIDController           pidRotate, pidDrive;
 
 
     public DcMotor initMotor(String motorName, DcMotor.Direction direction){
@@ -123,18 +122,25 @@ public class Skystone_Auto extends LinearOpMode
 
         return motorVariable;
     }
+    public PowerPlayAuto() throws Exception
+    {
+        Logging.setup();
+        Logging.log("Starting Tele-Op Logging");
+    }
     @Override
     public void runOpMode()
     {
 
-        frontRight = initMotor("frontRight");
-        frontLeft = initMotor("frontLeft", REVERSE);
-        backRight = initMotor("backRight");
-        backLeft = initMotor("backLeft", REVERSE);
+        frontRight = initMotor(names.fr);
+        frontLeft = initMotor(names.fl, REVERSE);
+        backRight = initMotor(names.br);
+        backLeft = initMotor(names.bl, REVERSE);
 //        armJoint1 = initMotor("armJoint1", REVERSE);
 //
 //        armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
-        flapper = hardwareMap.get(Servo.class, "flapper_servo");
+        flapper = hardwareMap.get(Servo.class, names.intake);
+        slides = hardwareMap.get(DcMotor.class, names.slides);
+
 //        armJoint2.setPosition(1);
 //        claw.setPosition(1);
 
@@ -148,9 +154,13 @@ public class Skystone_Auto extends LinearOpMode
         // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
         // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
         // and named "imu".
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        imu = hardwareMap.get(BNO055IMU.class, names.imu);
 
         imu.initialize(parameters);
+
+        pidRotate = new PIDController(0,0,0);
+
+        pidDrive = new PIDController(.05,0,0);
 
         telemetry.addData("Mode", "calibrating...");
         telemetry.update();
@@ -166,8 +176,14 @@ public class Skystone_Auto extends LinearOpMode
         telemetry.addData("imu calib status", imu.getCalibrationStatus().toString());
         telemetry.update();
 
+        pidDrive.setSetpoint(0);
+        pidDrive.setOutputRange(0,power);
+        pidDrive.setInputRange(-90,90);
+        pidDrive.enable();
+
+
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, names.camera), cameraMonitorViewId);
         aprilTagDetectionPipeline = new AprilTagPipeline(TAGSIZE, fx, fy, cx, cy);
 
         camera.setPipeline(aprilTagDetectionPipeline);
@@ -192,6 +208,8 @@ public class Skystone_Auto extends LinearOpMode
          * The INIT-loop:
          * This REPLACES waitForStart!
          */
+
+
         while (!isStarted() && !isStopRequested())
         {
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
@@ -428,6 +446,26 @@ public class Skystone_Auto extends LinearOpMode
         // restart imu movement tracking.
         resetAngle();
 
+
+        if (Math.abs(degrees) > 359) degrees = (int) Math.copySign(359,degrees);
+
+        double p = Math.abs(power/degrees);
+
+        // Integrative factor can be approximated by diving P by 100. Then you have to tune
+        // this value until the robot turns, slows down and stops accurately and also does
+        // not take too long to "home" in on the setpoint. Started with 100 but robot did not
+        // slow and overshot the turn. Increasing I slowed the end of the turn and completed
+        // the turn in a timely manner
+        double i = p / 200.0;
+
+        pidRotate.setPID(p, i, 0);
+        pidRotate.reset();
+        pidRotate.setSetpoint(degrees);
+        pidRotate.setInputRange(0,degrees);
+        pidRotate.setOutputRange(0,power);
+        pidRotate.setTolerance(1);
+        pidRotate.enable();
+
         // getAngle() returns + when rotating counter clockwise (left) and - when rotating
         // clockwise (right).
 
@@ -444,37 +482,45 @@ public class Skystone_Auto extends LinearOpMode
         else return;
 
         // set power to rotate.
-        frontLeft.setPower(leftPower);
-        backLeft.setPower(leftPower);
-        frontRight.setPower(rightPower);
-        backRight.setPower(rightPower);
-        // rotate until turn is completed.
-
-        if (degrees > 0)
+        if (degrees < 0)
         {
             // On right turn we have to get off zero first.
+            while (opModeIsActive() && getAngle() == 0)
+            {
+                frontLeft.setPower(-power);
+                backLeft.setPower(-power);
 
-
-            while (opModeIsActive() && -getAngle() < degrees) {
-                telemetry.addData("Angle", -getAngle());
-                telemetry.addData("Target", degrees);
-                telemetry.update();
-
-
+                backRight.setPower(power);
+                frontRight.setPower(power);
+                sleep(100);
             }
+
+            do
+            {
+                power = pidRotate.performPID(getAngle()); // power will be - on right turn.
+                frontLeft.setPower(-power);
+                backLeft.setPower(-power);
+                frontRight.setPower(power);
+                backRight.setPower(power);
+            } while (opModeIsActive() && !pidRotate.onTarget());
         }
-        else { // left turn.
-            while (opModeIsActive() && getAngle() == 0) {
-            }
+        else    // left turn.
+            do
+            {
+                power = pidRotate.performPID(getAngle()); // power will be + on left turn.
+                frontLeft.setPower(-power);
+                backLeft.setPower(-power);
+                frontRight.setPower(power);
+                backRight.setPower(power);
+            } while (opModeIsActive() && !pidRotate.onTarget());
 
-            while (opModeIsActive() && -getAngle() > degrees) {
-            }
-        }
         // turn the motors off.
         frontRight.setPower(0);
-        frontLeft.setPower(0);
         backRight.setPower(0);
+        frontLeft.setPower(0);
         backLeft.setPower(0);
+
+        rotation = getAngle();
 
         // wait for rotation to stop.
         sleep(1000);
@@ -533,7 +579,7 @@ public class Skystone_Auto extends LinearOpMode
 
             while (opModeIsActive() &&
                     (isBusy(backRight, newBackRightTarget, mode1) && isBusy(backLeft, newBackLeftTarget, mode2) && isBusy(frontRight, newRightTarget, mode3) && isBusy(frontLeft, newLeftTarget, mode4))) {
-                correction = checkDirection();
+                correction = pidDrive.performPID(getAngle());
 
                 frontLeft.setPower(speed - correction);
                 frontRight.setPower(speed + correction);
@@ -567,7 +613,7 @@ public class Skystone_Auto extends LinearOpMode
     }
     public void normalDrive(){
 //        encoderDrive(DRIVE_SPEED, 18, 18, 5);
-        turnDegrees(DRIVE_SPEED, 90);
+        turnDegrees(TURN_SPEED, 90);
 //        armJoint2.setPosition(1);
 
 //        encoderIntake(DRIVE_SPEED, 1840, 2);
@@ -597,9 +643,7 @@ public class Skystone_Auto extends LinearOpMode
     }
     public boolean isBusy(DcMotor motor, int position, boolean mode){
         int motorPos = -motor.getCurrentPosition();
-        telemetry.addData("Motor Position", motorPos);
-        telemetry.addData("Position", position);
-        telemetry.update();
+        Logging.log(motor.getDeviceName() + "'s current target is " + position + "and current position is " + motorPos);
         if (mode){
             return motorPos < position;
         }

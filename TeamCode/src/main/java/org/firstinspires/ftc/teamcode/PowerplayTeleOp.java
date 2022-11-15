@@ -4,61 +4,63 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
+//adb pull sdcard/Logging.txt c:\temp\robot_Logging.txt
 
-@TeleOp(name = "Skystone Tele Op", group = "Tele-Op")
-public class SkystoneTeleOp extends ThreadOpMode {
+//Above command for Log File
+@TeleOp(name = "PowerPlay Tele Op", group = "Tele-Op")
+public class PowerplayTeleOp extends ThreadOpMode {
     protected DcMotor frontRight;
     protected DcMotor backRight;
     protected DcMotor frontLeft;
     protected DcMotor backLeft;
     protected DcMotor slides;
-//    protected Servo armJoint2;
     protected Servo flapper;
-
+    public PowerplayBot names = new PowerplayBot();
 
     //Slide Related Variables
-    final int TOP_HARDSTOP = 2000;
-    final int BOTTOM_HARDSTOP = 100;
+    final int TOP_HARDSTOP = 3788;
+    final int BOTTOM_HARDSTOP = 0;//Actually supposed to be 0
 
-    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP,100,200,300,400,500,600,700, TOP_HARDSTOP};
+    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 1556, 2660, TOP_HARDSTOP};
     int slideIndex = 0;
     double slidesPosition = 0;
-    final double SLIDE_POWER = .1;
+    final double SLIDE_POWER = .75;
 
+   //Flap related Variables
+    final double flapUp = .33;
+    final double flapDown = .43;
 
+    public PowerplayTeleOp() throws Exception
+    {
+        Logging.setup();
+        Logging.log("Starting Tele-Op Logging");
+    }
     @Override
     public void mainInit() {
-        slides = hardwareMap.get(DcMotor.class, "slides");
-//        armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
-//        claw = hardwareMap.get(Servo.class, "claw_servo");
+        slides = hardwareMap.get(DcMotor.class, names.slides);
+        flapper = hardwareMap.get(Servo.class, names.intake);
 
         slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        double flapUp = 1;
-        double flapDown = .5;
-
         slidesPosition = slides.getCurrentPosition();
+
 
         slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        moveSlides(BOTTOM_HARDSTOP);
+        telemetry.addData("Slide position", slides.getCurrentPosition());
 
         flapper.setPosition(flapUp);
 
         // Pulls the motors from the robot configuration so that they can be manipulated
-        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
-        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
-        backRight = hardwareMap.get(DcMotor.class, "backRight");
-        backLeft = hardwareMap.get(DcMotor.class, "backLeft");
-
+        frontRight = hardwareMap.get(DcMotor.class, names.fr);
+        frontLeft = hardwareMap.get(DcMotor.class, names.fl);
+        backRight = hardwareMap.get(DcMotor.class, names.br);
+        backLeft = hardwareMap.get(DcMotor.class, names.bl);
 
 
         // Reverses the direction of the left motors, to allow a positive motor power to equal
         // forwards and a negative motor power to equal backwards
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
-
-
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
 
 
         // Makes the Driver Hub output the message "Status: Initialized"
@@ -88,6 +90,8 @@ public class SkystoneTeleOp extends ThreadOpMode {
                 telemetry.addData("Front Left Motor Power", frontLeft.getPower());
                 telemetry.addData("Back Right Motor Power", backRight.getPower());
                 telemetry.addData("Back Left Motor Power", backLeft.getPower());
+                telemetry.addData("Slide Position", slides.getCurrentPosition());
+
 
 
 
@@ -98,51 +102,72 @@ public class SkystoneTeleOp extends ThreadOpMode {
 
             }
         }));
+        registerThread(new TaskThread(new TaskThread.Actions(){
+            @Override
+            public void loop(){
+                Logging.log(Integer.toString(slides.getCurrentPosition()));
+            }
+        }));
         registerThread(new TaskThread(new TaskThread.Actions() {
             @Override
             public void loop() {
                 double slidePower = -gamepad2.left_stick_y;
-                if (slides.getCurrentPosition() > BOTTOM_HARDSTOP && slidePower < 0)
+                if (slides.getCurrentPosition() > BOTTOM_HARDSTOP && slidePower < 0) {
                     slides.setPower(slidePower);
+                    Logging.log("Moving Slides Down");
+                }
                 else
                     slides.setPower(0);
 
-                if (slides.getCurrentPosition() < TOP_HARDSTOP && slidePower > 0)
+                if (slides.getCurrentPosition() < TOP_HARDSTOP && slidePower > 0) {
                     slides.setPower(slidePower);
+                    Logging.log("Moving Slides Up");
+                }
                 else
                     slides.setPower(0);
 
                 if (gamepad2.dpad_up){
                     if (slideIndex < SLIDE_POSITIONS.length - 1){
                         slideIndex++;
+                        Logging.log("Moving Slides Up");
                     }
                     moveSlides(SLIDE_POSITIONS[slideIndex]);
                 }
                 if (gamepad2.dpad_down){
                     if (slideIndex > 0){
                         slideIndex--;
+                        Logging.log("Moving Slides Down");
                     }
                     moveSlides(SLIDE_POSITIONS[slideIndex]);
                 }
                 if (gamepad2.left_bumper){
                     slideIndex = 0;
                     moveSlides(SLIDE_POSITIONS[slideIndex]);
+                    Logging.log("Bringing Slides all the way down");
                 }
                 if(gamepad2.right_bumper){
                     slideIndex = SLIDE_POSITIONS.length - 1;
                     moveSlides(SLIDE_POSITIONS[slideIndex]);
+                    Logging.log("Bringing Slides all the way up");
                 }
                 if(gamepad2.x){
                     if(flapper.getPosition() == flapUp){
                         flapper.setPosition(flapDown);
+                        Logging.log("Lowering Flap");
+                        while(gamepad2.x){
+                            telemetry.addLine("Waiting for User to Release");
+                            telemetry.update();
+                        }
                     }
-                    if(flapper.getPosition() == flapDown){
+                    else if(flapper.getPosition() == flapDown){
                         flapper.setPosition(flapUp);
+                        Logging.log("Raising Flap");
+                        while(gamepad2.x){
+                            telemetry.addLine("Waiting for User to Release");
+                            telemetry.update();
+                        }
                     }
-                    while(gamepad2.x){
-                        telemetry.addLine("Waiting for User to Release");
-                        telemetry.update();
-                    }
+
                     telemetry.clear();
                     telemetry.update();
 
@@ -160,22 +185,24 @@ public class SkystoneTeleOp extends ThreadOpMode {
     }
 
     public void moveSlides(double target){
-        int currentPos = slides.getCurrentPosition();
-        if (currentPos > target){
+        double currentTime = getRuntime();
+        if (slidesPosition > target){
             slides.setPower(-SLIDE_POWER);
-            while (currentPos > target){
+            while (slidesPosition > target  && getRuntime() - currentTime < 5){
                 telemetry.addData("Slide Position",slides.getCurrentPosition());
                 telemetry.addData("Target Position",target);
                 telemetry.update();
+                slidesPosition = slides.getCurrentPosition();
             }
             slides.setPower(0);
         }
-        if (currentPos < target){
+        else if (slidesPosition < target){
             slides.setPower(SLIDE_POWER);
-            while (currentPos < target){
+            while (slidesPosition < target && getRuntime() - currentTime < 5){
                 telemetry.addData("Slide Position",slides.getCurrentPosition());
                 telemetry.addData("Target Position",target);
                 telemetry.update();
+                slidesPosition = slides.getCurrentPosition();
             }
             slides.setPower(0);
         }

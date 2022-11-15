@@ -1,14 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Disabled
-@TeleOp(name="Motor Testing", group="Testing_Servo")
+@TeleOp(name="Calibrate Slide to 0 Position", group="Testing_Servo")
 public class Testing_Motor extends LinearOpMode {
     DcMotor testingMotor;
     Boolean a;//changes servo position by -0.1
@@ -34,10 +32,15 @@ public class Testing_Motor extends LinearOpMode {
 
         while (opModeIsActive() && !isStopRequested()) {
             telemetry.addLine(testingMotor.getCurrentPosition() + "");
-            testingMotor.setPower(gamepad1.left_stick_y/3.0);
+            testingMotor.setPower(-gamepad1.left_stick_y/3.0);
+
             telemetry.addLine("Gamepad1 Controls:\nLeft Stick Y Moves Motor");
             telemetry.addData("Slide Position", testingMotor.getCurrentPosition());
+            telemetry.addData("Slide power", testingMotor.getPower());
+            telemetry.addData("power", -gamepad1.left_stick_y/3.0);
             telemetry.update();
+//            testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
     }
 
