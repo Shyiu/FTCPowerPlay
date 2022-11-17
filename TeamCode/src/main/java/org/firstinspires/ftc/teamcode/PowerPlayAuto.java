@@ -25,7 +25,7 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -43,6 +43,7 @@ import java.util.ArrayList;
 @Autonomous(name = "Skystone Auto", group = "Skystone")
 public class PowerPlayAuto extends LinearOpMode
 {
+    private static final double SLIDE_POWER = .5;
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
 
@@ -87,8 +88,8 @@ public class PowerPlayAuto extends LinearOpMode
     static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
 
     int parking_zone = 2;
-    double flapDown = .43;
-    double flapUp = .33;
+    final double flapUp = .57;
+    final double flapDown = .77;
     AprilTagDetection tagOfInterest = null;
 
     //Motor Setup
@@ -97,7 +98,7 @@ public class PowerPlayAuto extends LinearOpMode
     // Reverses the direction of the left motors, to allow a positive motor power to equal
     // forwards and a negative motor power to equal backwards
     DcMotor frontRight, frontLeft, backRight, backLeft, slides;
-    Servo flapper;
+    DcMotorSimple flapper;
     BNO055IMU imu;
     Orientation             lastAngles = new Orientation();
     double                  globalAngle, power = .5, correction, rotation;
@@ -138,10 +139,10 @@ public class PowerPlayAuto extends LinearOpMode
 //        armJoint1 = initMotor("armJoint1", REVERSE);
 //
 //        armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
-        flapper = hardwareMap.get(Servo.class, names.intake);
+        flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         slides = hardwareMap.get(DcMotor.class, names.slides);
 
-        flapper.setPosition(flapUp);
+        flapper.setPower(flapDown);
 //        armJoint2.setPosition(1);
 //        claw.setPosition(1);
 
@@ -320,7 +321,10 @@ public class PowerPlayAuto extends LinearOpMode
 //            encoderDrive(DRIVE_SPEED, 28.5, 28.5,5);
 //            sleep(250);
 //            turnDegrees(TURN_SPEED, -90);
-            turnDegrees(TURN_SPEED, -80);
+            normalDrive();
+
+
+
 //
 //            sleep(250);
 //            encoderDrive(DRIVE_SPEED, 12, 12,5);
@@ -336,9 +340,9 @@ public class PowerPlayAuto extends LinearOpMode
 
             if (parking_zone == 1){
 //                normalDrive();
-                encoderDrive(DRIVE_SPEED, 28.5, 28.5,5);
+                encoderDrive(DRIVE_SPEED, 26, 26,5);
                 sleep(250);
-                flapper.setPosition(flapDown);
+                flapper.setPower(flapDown);
                 sleep(250);
 //            turnDegrees(TURN_SPEED, -90);
                 turnDegrees(TURN_SPEED, 80);
@@ -346,20 +350,20 @@ public class PowerPlayAuto extends LinearOpMode
                 sleep(250);
                 encoderDrive(DRIVE_SPEED, 16, 16,5);
                 sleep(250);
-                flapper.setPosition(flapUp);
+                flapper.setPower(flapUp);
 //Add Code to face towards the middle for teleop to allow for easiest change.
 
             }
             if (parking_zone == 3){
-                encoderDrive(DRIVE_SPEED, 28.5, 28.5,5);
+                encoderDrive(DRIVE_SPEED, 26, 26,5);
                 sleep(250);
-                flapper.setPosition(flapDown);
+                flapper.setPower(flapDown);
                 sleep(250);
                 turnDegrees(TURN_SPEED, -80);
                 sleep(250);
                 encoderDrive(DRIVE_SPEED, 16, 16,5);
                 sleep(250);
-                flapper.setPosition(flapUp);
+                flapper.setPower(flapUp);
             }
         }
     }
@@ -389,20 +393,30 @@ public class PowerPlayAuto extends LinearOpMode
 
     }
 
+
     public void encoderIntake(double speed, int ticks, double timeoutS){
-
-        if(opModeIsActive()){
+        int slidesPosition = slides.getCurrentPosition();
+        if(opModeIsActive()) {
             double currentTime = getRuntime();
-
-            boolean dir = mode(slides, ticks);
-            slides.setPower(speedConversion(dir, speed));
-            while (opModeIsActive() && getRuntime() - currentTime < timeoutS && isBusy(slides, ticks, dir)){
-                telemetry.addData("Position", slides.getCurrentPosition());
+            if (slidesPosition > ticks) {
+                slides.setPower(-speed);
+                while (slidesPosition > ticks && getRuntime() - currentTime < timeoutS) {
+                    telemetry.addData("Slide Position", slides.getCurrentPosition());
+                    telemetry.addData("Target Position", ticks);
+                    telemetry.update();
+                    slidesPosition = slides.getCurrentPosition();
+                }
+                slides.setPower(0);
+            } else if (slidesPosition < ticks) {
+                slides.setPower(speed);
+                while (slidesPosition < ticks && getRuntime() - currentTime < 5) {
+                    telemetry.addData("Slide Position", slides.getCurrentPosition());
+                    telemetry.addData("Target Position", ticks);
+                    telemetry.update();
+                    slidesPosition = slides.getCurrentPosition();
+                }
+                slides.setPower(0);
             }
-            slides.setPower(0);
-            slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-
         }
     }
     private void resetAngle()
@@ -499,9 +513,9 @@ public class PowerPlayAuto extends LinearOpMode
             while (opModeIsActive() && getAngle() == 0)
             {
 
-//                backRight.setPower(-1);
+                backRight.setPower(-1);
 //                frontRight.setPower(-1);
-                frontLeft.setPower(1);
+//                frontLeft.setPower(1);
                 backLeft.setPower(1);
                 sleep(100);
             }
@@ -511,8 +525,8 @@ public class PowerPlayAuto extends LinearOpMode
                 power = pidRotate.performPID(getAngle()); // power will be - on right turn.
 
 //                frontRight.setPower(-1);
-//                backRight.setPower(-1);
-                frontLeft.setPower(1);
+                backRight.setPower(-1);
+//                frontLeft.setPower(1);
                 backLeft.setPower(1);
             } while (opModeIsActive() && !pidRotate.onTarget());
         }
@@ -627,7 +641,15 @@ public class PowerPlayAuto extends LinearOpMode
     }
     public void normalDrive(){
 //        encoderDrive(DRIVE_SPEED, 18, 18, 5);
-        turnDegrees(TURN_SPEED, 90);
+        turnDegrees(TURN_SPEED, 20);
+        encoderIntake(.5,3588,10);
+        encoderDrive(DRIVE_SPEED, 3,3,5);
+        flapper.setPower(flapUp);
+        sleep(250);
+        flapper.setPower(flapDown);
+        sleep(250);
+        encoderDrive(DRIVE_SPEED, -3,-3,5);
+        encoderIntake(.5,2000,10);
 //        armJoint2.setPosition(1);
 
 //        encoderIntake(DRIVE_SPEED, 1840, 2);

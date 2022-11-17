@@ -215,6 +215,7 @@ class AprilTagPipeline extends OpenCvPipeline
         Imgproc.line(buf, projectedPoints[0], projectedPoints[3], blue, thickness);
 
         Imgproc.circle(buf, projectedPoints[0], thickness, white, -1);
+        
     }
 
     void draw3dCubeMarker(Mat buf, double length, double tagWidth, double tagHeight, int thickness, Mat rvec, Mat tvec, Mat cameraMatrix)
