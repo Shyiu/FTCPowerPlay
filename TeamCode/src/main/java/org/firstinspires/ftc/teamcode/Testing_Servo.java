@@ -3,11 +3,11 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @TeleOp(name="Servo Testing_Servo", group="Testing_Servo")
 public class Testing_Servo extends LinearOpMode {
-    Servo testingServo;
+    DcMotorSimple testingServo;
     Boolean a;//changes servo position by -0.1
     Boolean b;//changes servo position by -0.01
     Boolean y;//changes servo position by  0.01
@@ -18,7 +18,7 @@ public class Testing_Servo extends LinearOpMode {
     public void runOpMode(){
         telemetry.addLine("Gamepad1 Controls:\nx:0.1\ny:0.01\n:a:-0.1\nb:-0.01");
         telemetry.update();
-        testingServo = hardwareMap.get(Servo.class, "flapper");//change name to servo that is being tested.
+        testingServo = hardwareMap.get(DcMotorSimple.class, "flapper");//change name to servo that is being tested.
 
         waitForStart();
 
@@ -28,7 +28,7 @@ public class Testing_Servo extends LinearOpMode {
             x = gamepad1.y;
             y = gamepad1.x;
             if(a){
-                testingServo.setPosition(testingServo.getPosition() - .1);
+                testingServo.setPower(testingServo.getPower() - .1);
                 sleep(1000);
                 while(!a){
                     sleep(250);
@@ -36,7 +36,7 @@ public class Testing_Servo extends LinearOpMode {
 
             }
             if(b){
-                testingServo.setPosition(testingServo.getPosition() - .01);
+                testingServo.setPower(testingServo.getPower() - .01);
                 sleep(1000);
                 while(!b){
                     sleep(250);
@@ -44,7 +44,7 @@ public class Testing_Servo extends LinearOpMode {
 
             }
             if(x){
-                testingServo.setPosition(testingServo.getPosition() + .1);
+                testingServo.setPower(testingServo.getPower() + .1);
                 sleep(1000);
                 while(!x){
                     sleep(250);
@@ -52,15 +52,18 @@ public class Testing_Servo extends LinearOpMode {
 
             }
             if(y){
-                testingServo.setPosition(testingServo.getPosition() + .01);
+                testingServo.setPower(testingServo.getPower() + .01);
                 sleep(1000);
                 while(!y){
                     sleep(250);
                 }
 
             }
+            if(gamepad1.dpad_down){
+                testingServo.setPower(.79);
+            }
             telemetry.addLine("Gamepad1 Controls:\nx:0.1\ny:0.01\n:a:-0.1\nb:-0.01");
-            telemetry.addData("Servo Position", testingServo.getPosition());
+            telemetry.addData("Servo Position", testingServo.getPower());
             telemetry.update();
         }
     }

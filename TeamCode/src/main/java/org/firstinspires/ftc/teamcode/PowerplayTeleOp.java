@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 //adb pull sdcard/Logging.txt c:\temp\robot_Logging.txt
 
@@ -14,9 +14,9 @@ public class PowerplayTeleOp extends ThreadOpMode {
     protected DcMotor frontLeft;
     protected DcMotor backLeft;
     protected DcMotor slides;
-    protected Servo flapper;
+    protected DcMotorSimple flapper;
     public PowerplayBot names = new PowerplayBot();
-
+    //60 is encoder position
     //Slide Related Variables
     final int TOP_HARDSTOP = 3788;
     final int BOTTOM_HARDSTOP = 0;//Actually supposed to be 0
@@ -27,8 +27,8 @@ public class PowerplayTeleOp extends ThreadOpMode {
     final double SLIDE_POWER = .75;
 
    //Flap related Variables
-    final double flapUp = .33;
-    final double flapDown = .43;
+    final double flapUp = .57;
+    final double flapDown = .77;
 
     public PowerplayTeleOp() throws Exception
     {
@@ -38,7 +38,7 @@ public class PowerplayTeleOp extends ThreadOpMode {
     @Override
     public void mainInit() {
         slides = hardwareMap.get(DcMotor.class, names.slides);
-        flapper = hardwareMap.get(Servo.class, names.intake);
+        flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
 
         slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         slidesPosition = slides.getCurrentPosition();
@@ -48,7 +48,7 @@ public class PowerplayTeleOp extends ThreadOpMode {
         slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         telemetry.addData("Slide position", slides.getCurrentPosition());
 
-        flapper.setPosition(flapUp);
+        flapper.setPower(flapUp);
 
         // Pulls the motors from the robot configuration so that they can be manipulated
         frontRight = hardwareMap.get(DcMotor.class, names.fr);
@@ -151,23 +151,11 @@ public class PowerplayTeleOp extends ThreadOpMode {
                     Logging.log("Bringing Slides all the way up");
                 }
                 if(gamepad2.x){
-                    if(flapper.getPosition() == flapUp){
-                        flapper.setPosition(flapDown);
-                        Logging.log("Lowering Flap");
-                        while(gamepad2.x){
-                            telemetry.addLine("Waiting for User to Release");
-                            telemetry.update();
-                        }
+                    flapper.setPower(closerToV2(flapUp, flapper.getPower(), flapDown));
+                    while(gamepad2.x){
+                        telemetry.addLine("Waiting for User to Release X");
+                        telemetry.update();
                     }
-                    else if(flapper.getPosition() == flapDown){
-                        flapper.setPosition(flapUp);
-                        Logging.log("Raising Flap");
-                        while(gamepad2.x){
-                            telemetry.addLine("Waiting for User to Release");
-                            telemetry.update();
-                        }
-                    }
-
                     telemetry.clear();
                     telemetry.update();
 
@@ -211,5 +199,12 @@ public class PowerplayTeleOp extends ThreadOpMode {
     public void mainLoop() {
 
     }
-
+    public double closerToV2(double v1, double v2, double v3){
+        double diff1 = Math.abs(v1-v2);
+        double diff2 = Math.abs(v2-v3);
+        if (diff1 > diff2){
+            return v1;
+        }
+        return v2;
+    }
 }
