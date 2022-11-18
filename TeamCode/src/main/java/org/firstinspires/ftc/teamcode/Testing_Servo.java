@@ -13,6 +13,8 @@ public class Testing_Servo extends LinearOpMode {
     Boolean y;//changes servo position by  0.01
     Boolean x;//changes servo position by  0.1
 
+    final double flapUp = .379;
+    final double flapDown = .77;
 
     @Override
     public void runOpMode(){
@@ -59,12 +61,28 @@ public class Testing_Servo extends LinearOpMode {
                 }
 
             }
-            if(gamepad1.dpad_down){
-                testingServo.setPower(.79);
+            if(gamepad2.x){
+                testingServo.setPower(closerToV2(flapUp, testingServo.getPower(), flapDown));
+                while(gamepad2.x){
+                    telemetry.addLine("Waiting for User to Release X");
+                    telemetry.update();
+                }
+                telemetry.clear();
+                telemetry.update();
+
             }
             telemetry.addLine("Gamepad1 Controls:\nx:0.1\ny:0.01\n:a:-0.1\nb:-0.01");
             telemetry.addData("Servo Position", testingServo.getPower());
             telemetry.update();
         }
+
+    }
+    public double closerToV2(double v1, double v2, double v3){
+        double diff1 = Math.abs(v1-v2);
+        double diff2 = Math.abs(v2-v3);
+        if (diff1 > diff2){
+            return v1;
+        }
+        return v3;
     }
 }
