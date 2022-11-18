@@ -15,19 +15,22 @@ public class PowerplayTeleOp extends ThreadOpMode {
     protected DcMotor backLeft;
     protected DcMotor slides;
     protected DcMotorSimple flapper;
+    final boolean autoSlides = false;
+
+    double leftTgtPower = 0, rightTgtPower = 0;
     public PowerplayBot names = new PowerplayBot();
     //60 is encoder position
     //Slide Related Variables
-    final int TOP_HARDSTOP = 3788;
+    final int TOP_HARDSTOP = 3688;
     final int BOTTOM_HARDSTOP = 0;//Actually supposed to be 0
 
     final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 1556, 2660, TOP_HARDSTOP};
     int slideIndex = 0;
     double slidesPosition = 0;
-    final double SLIDE_POWER = .75;
+    final double SLIDE_POWER = .5;
 
    //Flap related Variables
-    final double flapUp = .57;
+    final double flapUp = .379;
     final double flapDown = .77;
 
     public PowerplayTeleOp() throws Exception
@@ -72,8 +75,8 @@ public class PowerplayTeleOp extends ThreadOpMode {
             @Override
             public void loop() {
                 //The loop method should contain loop code
-                double leftTgtPower = -gamepad1.left_stick_y;
-                double rightTgtPower = -gamepad1.right_stick_y;
+                leftTgtPower = -gamepad1.left_stick_y;
+                rightTgtPower = -gamepad1.right_stick_y;
                 frontLeft.setPower(leftTgtPower);
                 backLeft.setPower(leftTgtPower);
                 frontRight.setPower(rightTgtPower);
@@ -84,21 +87,7 @@ public class PowerplayTeleOp extends ThreadOpMode {
                 // Left Target Power: A float from [-1,1]
                 // Right Target Power: A float from [-1,1]
                 // The current power of each motor
-                telemetry.addData("Left Target Power", leftTgtPower);
-                telemetry.addData("Right Target Power", rightTgtPower);
-                telemetry.addData("Front Right Motor Power", frontRight.getPower());
-                telemetry.addData("Front Left Motor Power", frontLeft.getPower());
-                telemetry.addData("Back Right Motor Power", backRight.getPower());
-                telemetry.addData("Back Left Motor Power", backLeft.getPower());
-                telemetry.addData("Slide Position", slides.getCurrentPosition());
 
-
-
-
-
-                // Status: Running
-                telemetry.addData("Status", "Running");
-                telemetry.update();
 
             }
         }));
@@ -112,19 +101,13 @@ public class PowerplayTeleOp extends ThreadOpMode {
             @Override
             public void loop() {
                 double slidePower = -gamepad2.left_stick_y;
-                if (slides.getCurrentPosition() > BOTTOM_HARDSTOP && slidePower < 0) {
+                if (slides.getCurrentPosition() > BOTTOM_HARDSTOP && slides.getCurrentPosition() < TOP_HARDSTOP) {
                     slides.setPower(slidePower);
-                    Logging.log("Moving Slides Down");
                 }
                 else
                     slides.setPower(0);
 
-                if (slides.getCurrentPosition() < TOP_HARDSTOP && slidePower > 0) {
-                    slides.setPower(slidePower);
-                    Logging.log("Moving Slides Up");
-                }
-                else
-                    slides.setPower(0);
+
 
                 if (gamepad2.dpad_up){
                     if (slideIndex < SLIDE_POSITIONS.length - 1){
@@ -174,30 +157,45 @@ public class PowerplayTeleOp extends ThreadOpMode {
 
     public void moveSlides(double target){
         double currentTime = getRuntime();
-        if (slidesPosition > target){
-            slides.setPower(-SLIDE_POWER);
-            while (slidesPosition > target  && getRuntime() - currentTime < 5){
-                telemetry.addData("Slide Position",slides.getCurrentPosition());
-                telemetry.addData("Target Position",target);
-                telemetry.update();
-                slidesPosition = slides.getCurrentPosition();
+        if(autoSlides) {
+            if (slidesPosition > target) {
+                slides.setPower(-SLIDE_POWER);
+                while (slidesPosition > target && getRuntime() - currentTime < 5) {
+                    telemetry.addData("Slide Position", slides.getCurrentPosition());
+                    telemetry.addData("Target Position", target);
+                    telemetry.update();
+                    slidesPosition = slides.getCurrentPosition();
+                }
+                slides.setPower(0);
+            } else if (slidesPosition < target) {
+                slides.setPower(SLIDE_POWER);
+                while (slidesPosition < target && getRuntime() - currentTime < 5) {
+                    telemetry.addData("Slide Position", slides.getCurrentPosition());
+                    telemetry.addData("Target Position", target);
+                    telemetry.update();
+                    slidesPosition = slides.getCurrentPosition();
+                }
+                slides.setPower(0);
             }
-            slides.setPower(0);
-        }
-        else if (slidesPosition < target){
-            slides.setPower(SLIDE_POWER);
-            while (slidesPosition < target && getRuntime() - currentTime < 5){
-                telemetry.addData("Slide Position",slides.getCurrentPosition());
-                telemetry.addData("Target Position",target);
-                telemetry.update();
-                slidesPosition = slides.getCurrentPosition();
-            }
-            slides.setPower(0);
         }
     }
     @Override
     public void mainLoop() {
+        telemetry.addData("Left Target Power", leftTgtPower);
+        telemetry.addData("Right Target Power", rightTgtPower);
+        telemetry.addData("Front Right Motor Power", frontRight.getPower());
+        telemetry.addData("Front Left Motor Power", frontLeft.getPower());
+        telemetry.addData("Back Right Motor Power", backRight.getPower());
+        telemetry.addData("Back Left Motor Power", backLeft.getPower());
+        telemetry.addData("Slide Position", slides.getCurrentPosition());
 
+
+
+
+
+        // Status: Running
+        telemetry.addData("Status", "Running");
+        telemetry.update();
     }
     public double closerToV2(double v1, double v2, double v3){
         double diff1 = Math.abs(v1-v2);
@@ -205,6 +203,6 @@ public class PowerplayTeleOp extends ThreadOpMode {
         if (diff1 > diff2){
             return v1;
         }
-        return v2;
+        return v3;
     }
 }
