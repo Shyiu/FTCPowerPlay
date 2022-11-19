@@ -15,16 +15,16 @@ public class PowerplayTeleOp extends ThreadOpMode {
     protected DcMotor backLeft;
     protected DcMotor slides;
     protected DcMotorSimple flapper;
-    final boolean autoSlides = false;
+    final boolean autoSlides = true;
 
     double leftTgtPower = 0, rightTgtPower = 0;
     public PowerplayBot names = new PowerplayBot();
     //60 is encoder position
     //Slide Related Variables
-    final int TOP_HARDSTOP = 3688;
+    final int TOP_HARDSTOP = 7652;
     final int BOTTOM_HARDSTOP = 0;//Actually supposed to be 0
 
-    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 1556, 2660, TOP_HARDSTOP};
+    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 3356, 5431, TOP_HARDSTOP};
     int slideIndex = 0;
     double slidesPosition = 0;
     final double SLIDE_POWER = .5;
@@ -102,6 +102,12 @@ public class PowerplayTeleOp extends ThreadOpMode {
             public void loop() {
                 double slidePower = -gamepad2.left_stick_y;
                 if (slides.getCurrentPosition() > BOTTOM_HARDSTOP && slides.getCurrentPosition() < TOP_HARDSTOP) {
+                    slides.setPower(slidePower);
+                }
+                else if (slides.getCurrentPosition() == BOTTOM_HARDSTOP && slidePower > 0) {
+                    slides.setPower(slidePower);
+                }
+                else if (slides.getCurrentPosition() == TOP_HARDSTOP && slidePower < 0) {
                     slides.setPower(slidePower);
                 }
                 else
