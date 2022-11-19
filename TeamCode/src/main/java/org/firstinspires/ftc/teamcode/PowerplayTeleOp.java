@@ -104,10 +104,10 @@ public class PowerplayTeleOp extends ThreadOpMode {
                 if (slides.getCurrentPosition() > BOTTOM_HARDSTOP && slides.getCurrentPosition() < TOP_HARDSTOP) {
                     slides.setPower(slidePower);
                 }
-                else if (slides.getCurrentPosition() == BOTTOM_HARDSTOP && slidePower > 0) {
+                else if (slides.getCurrentPosition() <= BOTTOM_HARDSTOP && slidePower > 0) {
                     slides.setPower(slidePower);
                 }
-                else if (slides.getCurrentPosition() == TOP_HARDSTOP && slidePower < 0) {
+                else if (slides.getCurrentPosition() >= TOP_HARDSTOP && slidePower < 0) {
                     slides.setPower(slidePower);
                 }
                 else
