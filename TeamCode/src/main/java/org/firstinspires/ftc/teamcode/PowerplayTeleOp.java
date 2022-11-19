@@ -4,7 +4,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-//adb pull sdcard/Logging.txt c:\temp\robot_Logging.txt
+//cd C:\Users\vihas\Android\platform-tools
+//adb.exe
+// adb pull sdcard/Logging.txt c:\temp\robot_Logging.txt
 
 //Above command for Log File
 @TeleOp(name = "PowerPlay Tele Op", group = "Tele-Op")
@@ -15,19 +17,19 @@ public class PowerplayTeleOp extends ThreadOpMode {
     protected DcMotor backLeft;
     protected DcMotor slides;
     protected DcMotorSimple flapper;
-    final boolean autoSlides = false;
+    final boolean autoSlides = true;
 
     double leftTgtPower = 0, rightTgtPower = 0;
     public PowerplayBot names = new PowerplayBot();
     //60 is encoder position
     //Slide Related Variables
-    final int TOP_HARDSTOP = 3688;
+    final int TOP_HARDSTOP = 7500;
     final int BOTTOM_HARDSTOP = 0;//Actually supposed to be 0
-
-    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 1556, 2660, TOP_HARDSTOP};
+    final int STARTING_POS = 719;
+    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 3356, 5431, TOP_HARDSTOP};
     int slideIndex = 0;
     double slidesPosition = 0;
-    final double SLIDE_POWER = .5;
+    final double SLIDE_POWER = 1;
 
    //Flap related Variables
     final double flapUp = .379;
@@ -51,7 +53,6 @@ public class PowerplayTeleOp extends ThreadOpMode {
         slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         telemetry.addData("Slide position", slides.getCurrentPosition());
 
-        flapper.setPower(flapUp);
 
         // Pulls the motors from the robot configuration so that they can be manipulated
         frontRight = hardwareMap.get(DcMotor.class, names.fr);
@@ -104,6 +105,12 @@ public class PowerplayTeleOp extends ThreadOpMode {
                 if (slides.getCurrentPosition() > BOTTOM_HARDSTOP && slides.getCurrentPosition() < TOP_HARDSTOP) {
                     slides.setPower(slidePower);
                 }
+                else if (slides.getCurrentPosition() <= BOTTOM_HARDSTOP && slidePower > 0) {
+                    slides.setPower(slidePower);
+                }
+                else if (slides.getCurrentPosition() >= TOP_HARDSTOP && slidePower < 0) {
+                    slides.setPower(slidePower);
+                }
                 else
                     slides.setPower(0);
 
@@ -112,26 +119,22 @@ public class PowerplayTeleOp extends ThreadOpMode {
                 if (gamepad2.dpad_up){
                     if (slideIndex < SLIDE_POSITIONS.length - 1){
                         slideIndex++;
-                        Logging.log("Moving Slides Up");
                     }
                     moveSlides(SLIDE_POSITIONS[slideIndex]);
                 }
                 if (gamepad2.dpad_down){
                     if (slideIndex > 0){
                         slideIndex--;
-                        Logging.log("Moving Slides Down");
                     }
                     moveSlides(SLIDE_POSITIONS[slideIndex]);
                 }
                 if (gamepad2.left_bumper){
                     slideIndex = 0;
                     moveSlides(SLIDE_POSITIONS[slideIndex]);
-                    Logging.log("Bringing Slides all the way down");
                 }
                 if(gamepad2.right_bumper){
                     slideIndex = SLIDE_POSITIONS.length - 1;
                     moveSlides(SLIDE_POSITIONS[slideIndex]);
-                    Logging.log("Bringing Slides all the way up");
                 }
                 if(gamepad2.x){
                     flapper.setPower(closerToV2(flapUp, flapper.getPower(), flapDown));
@@ -146,15 +149,6 @@ public class PowerplayTeleOp extends ThreadOpMode {
             }
         }));
     }
-    public static double negSqrt(double value){
-        if(value >= 0){
-            return Math.sqrt(value);
-        }
-        else{
-            return -1 * Math.sqrt((-1*value));
-        }
-    }
-
     public void moveSlides(double target){
         double currentTime = getRuntime();
         if(autoSlides) {

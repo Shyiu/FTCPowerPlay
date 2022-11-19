@@ -40,7 +40,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Skystone Auto", group = "Skystone")
+@Autonomous(name = "PowerPlay Pushbot Auto", group = "Skystone")
 public class PowerPlayAuto extends LinearOpMode
 {
     private static final double SLIDE_POWER = .5;
@@ -82,11 +82,12 @@ public class PowerPlayAuto extends LinearOpMode
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * Math.PI);
-    static final double     DRIVE_SPEED             = 0.2;
+    static final double     DRIVE_SPEED             = 0.5;
     static final double     TURN_SPEED              = 0.5;
     static final DcMotor.Direction FORWARD = DcMotor.Direction.FORWARD;
     static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
 
+    final int STARTING_POS = 719;
     int parking_zone = 2;
     final double flapUp = .57;
     final double flapDown = .77;
@@ -132,19 +133,19 @@ public class PowerPlayAuto extends LinearOpMode
     public void runOpMode()
     {
 
+
         frontRight = initMotor(names.fr);
         frontLeft = initMotor(names.fl, REVERSE);
         backRight = initMotor(names.br);
         backLeft = initMotor(names.bl, REVERSE);
-//        armJoint1 = initMotor("armJoint1", REVERSE);
-//
-//        armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
+
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         slides = hardwareMap.get(DcMotor.class, names.slides);
 
-        flapper.setPower(flapDown);
-//        armJoint2.setPosition(1);
-//        claw.setPosition(1);
+//        flapper.setPower(flapUp);
+//        encoderIntake(STARTING_POS,5);
+//        flapper.setPower(flapDown);
+
 
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
@@ -301,45 +302,15 @@ public class PowerPlayAuto extends LinearOpMode
             telemetry.update();
         }
 
-        /* Actually do something useful */
         if(tagOfInterest == null)
         {
-            /*
-             * Insert your autonomous code here, presumably running some default configuration
-             * since the tag was never sighted during INIT
-             */
-
-            //Guessing Parking Zone 2 If Tag Not Found
-//            normalDrive();
-
-//            sleep(250);
-//            turnDegrees(TURN_SPEED, -90);
-//            sleep(250);
-//            encoderDrive(DRIVE_SPEED, 21,21,5);
-//            encoderDrive(DRIVE_SPEED,20,20,3);
-//            turnDegrees(TURN_SPEED, 90);
-//            encoderDrive(DRIVE_SPEED, 28.5, 28.5,5);
-//            sleep(250);
-//            turnDegrees(TURN_SPEED, -90);
-//            normalDrive();
-normalDrive();//            sleep(250);
-//            flapper.setPower(flapDown);
-//            sleep(250);
-////            turnDegrees(TURN_SPEED, -90);
-//            turnDegrees(TURN_SPEED, 80);
-//
-//            sleep(250);
-//            encoderDrive(DRIVE_SPEED, 16, 16,5);
-
-
-//
-//            sleep(250);
-//            encoderDrive(DRIVE_SPEED, 12, 12,5);
+                normalDrive();
         }
         else
         {
             if (parking_zone == 2){
 //                normalDrive();
+                resetSlides();
                 encoderDrive(DRIVE_SPEED, 31, 31,5);
 
             }
@@ -347,33 +318,35 @@ normalDrive();//            sleep(250);
 
             if (parking_zone == 1){
 //                normalDrive();
-                encoderDrive(DRIVE_SPEED, 29, 29,5);
+                resetSlides();
+                encoderDrive(DRIVE_SPEED, 24, 24,5);
                 flapper.setPower(.3);
 
                 sleep(250);
                 flapper.setPower(flapDown);
                 sleep(250);
 //            turnDegrees(TURN_SPEED, -90);
-                turnDegrees(TURN_SPEED, 75);
+                turnDegrees(TURN_SPEED, 90);
 
                 sleep(250);
-                encoderDrive(DRIVE_SPEED, 14, 14,5);
+                encoderDrive(DRIVE_SPEED, 12, 12,5);
                 sleep(250);
                 flapper.setPower(flapDown);
 //Add Code to face towards the middle for teleop to allow for easiest change.
 
             }
             if (parking_zone == 3){
-                encoderDrive(DRIVE_SPEED, 29, 29,5);
+                resetSlides();
+                encoderDrive(DRIVE_SPEED, 24.5, 24.5,5);
                 flapper.setPower(.3);
 
                 sleep(250);
                 flapper.setPower(flapDown);
                 sleep(250);
 
-                turnDegrees(TURN_SPEED, -80);
+                turnDegrees(TURN_SPEED, -85);
                 sleep(250);
-                encoderDrive(DRIVE_SPEED, 20, 20,5);
+                encoderDrive(DRIVE_SPEED, 14, 14,5);
                 sleep(250);
                 flapper.setPower(flapDown);
             }
@@ -406,34 +379,30 @@ normalDrive();//            sleep(250);
     }
 
 
-    public void encoderIntake(double speed, int ticks, double timeoutS){
-        slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        int slidesPosition = slides.getCurrentPosition();
-        if(opModeIsActive()) {
+    public void encoderIntake(double target, double timeoutS){
             double currentTime = getRuntime();
-            if (slidesPosition > ticks) {
-                slides.setPower(-speed);
-                while (slidesPosition > ticks && getRuntime() - currentTime < timeoutS) {
-                    telemetry.addData("Slide Position", slides.getCurrentPosition());
-                    telemetry.addData("Target Position", ticks);
-                    telemetry.update();
-                    slidesPosition = slides.getCurrentPosition();
+            int slidesPosition = slides.getCurrentPosition();
+                if (slidesPosition > target) {
+                    slides.setPower(-SLIDE_POWER);
+                    while (slidesPosition > target && getRuntime() - currentTime < 5) {
+                        telemetry.addData("Slide Position", slides.getCurrentPosition());
+                        telemetry.addData("Target Position", target);
+                        telemetry.update();
+                        slidesPosition = slides.getCurrentPosition();
+                    }
+                    slides.setPower(0);
+                } else if (slidesPosition < target) {
+                    slides.setPower(SLIDE_POWER);
+                    while (slidesPosition < target && getRuntime() - currentTime < 5) {
+                        telemetry.addData("Slide Position", slides.getCurrentPosition());
+                        telemetry.addData("Target Position", target);
+                        telemetry.update();
+                        slidesPosition = slides.getCurrentPosition();
+                    }
+                    slides.setPower(0);
                 }
-                slides.setPower(0);
-            } else if (slidesPosition < ticks) {
-                slides.setPower(speed);
-                while (slidesPosition < ticks && getRuntime() - currentTime < 5) {
-                    telemetry.addData("Slide Position", slides.getCurrentPosition());
-                    telemetry.addData("Target Position", ticks);
-                    telemetry.update();
-                    slidesPosition = slides.getCurrentPosition();
-                }
-                slides.setPower(0);
-            }
-        }
     }
+
     private void resetAngle()
     {
         lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
@@ -528,10 +497,10 @@ normalDrive();//            sleep(250);
             while (opModeIsActive() && getAngle() == 0)
             {
 
-                backRight.setPower(power);
-                frontRight.setPower(power);
-                frontLeft.setPower(-power);
-                backLeft.setPower(-power);
+                backRight.setPower(-power);
+                frontRight.setPower(-power);
+                frontLeft.setPower(power);
+                backLeft.setPower(power);
                 sleep(100);
             }
 
@@ -614,6 +583,10 @@ normalDrive();//            sleep(250);
             Boolean mode4 = mode(frontLeft, newLeftTarget);
 
             runtime.reset();
+            double frontLeftSpeed = speedConversion(mode1, speed);
+            double frontRightSpeed = speedConversion(mode2, speed);
+            double backLeftSpeed = speedConversion(mode3, speed);
+            double backRightSpeed = speedConversion(mode4, speed);
             frontLeft.setPower(speedConversion(mode1, speed));
             frontRight.setPower(speedConversion(mode2, speed));
             backLeft.setPower(speedConversion(mode3, speed));
@@ -623,10 +596,10 @@ normalDrive();//            sleep(250);
                     (isBusy(backRight, newBackRightTarget, mode1) && isBusy(backLeft, newBackLeftTarget, mode2) && isBusy(frontRight, newRightTarget, mode3) && isBusy(frontLeft, newLeftTarget, mode4))) {
                 correction = pidDrive.performPID(getAngle());
 
-                frontLeft.setPower(speed - correction);
-                frontRight.setPower(speed + correction);
-                backLeft.setPower(speed - correction);
-                backRight.setPower(speed + correction);
+                frontLeft.setPower(Math.max(.3,frontLeftSpeed - correction));
+                frontRight.setPower(Math.max(.3,frontRightSpeed + correction));
+                backLeft.setPower(Math.max(.3,backLeftSpeed - correction));
+                backRight.setPower(Math.max(.3,backRightSpeed + correction));
 
                 // Display it for the driver.
                 telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
@@ -656,19 +629,22 @@ normalDrive();//            sleep(250);
     }
     public void normalDrive(){
 //        encoderDrive(DRIVE_SPEED, 18, 18, 5);
+        flapper.setPower(flapUp);
+        sleep(250);
+        encoderIntake(0,5);
         flapper.setPower(flapDown);
         sleep(250);
-        encoderIntake(.5,1000,5);
+        encoderIntake(2000,5);
         encoderDrive(DRIVE_SPEED,36,36,1);
         turnDegrees(TURN_SPEED, 30);
-        encoderIntake(.5,2588,5);
+        encoderIntake(7500,5);
         encoderDrive(DRIVE_SPEED, 4,4,5);
         flapper.setPower(flapUp);
         sleep(250);
         flapper.setPower(flapDown);
         sleep(250);
-        encoderDrive(-DRIVE_SPEED, -25,-25,5);
-        encoderIntake(.5,-1000,5);
+        encoderDrive(DRIVE_SPEED, -25,-25,5);
+        encoderIntake(2500,5);
 //        armJoint2.setPosition(1);
 
 //        encoderIntake(DRIVE_SPEED, 1840, 2);
@@ -692,7 +668,14 @@ normalDrive();//            sleep(250);
 //        sleep(250);
 
     }
-
+    public void resetSlides(){
+        flapper.setPower(flapUp);
+        sleep(250);
+//        encoderIntake(0,5);
+        flapper.setPower(flapDown);
+        sleep(250);
+//        encoderIntake(3356,5);
+    }
     public boolean mode(DcMotor motor, int position){
         return -motor.getCurrentPosition() < position;
     }
