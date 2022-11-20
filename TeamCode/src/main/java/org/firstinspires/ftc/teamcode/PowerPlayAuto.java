@@ -21,6 +21,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -39,14 +40,16 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
-
+@Config
 @Autonomous(name = "PowerPlay Pushbot Auto", group = "Skystone")
 public class PowerPlayAuto extends LinearOpMode
 {
-    private static final double SLIDE_POWER = .5;
+    private static double SLIDE_POWER = .5;
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
-
+    public static int INCHES_TO_HIGH_JUNCTION_BEFORE_TURN = 30;
+    public static int DEGREES_TO_HIGH_JUNCTION = 30;
+    public static int INCHES_TO_HIGH_JUNCTION_AFTER_TURN = 5;
     final int ID_TAG_OF_INTEREST = 0;
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
@@ -82,11 +85,12 @@ public class PowerPlayAuto extends LinearOpMode
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * Math.PI);
-    static final double     DRIVE_SPEED             = 0.5;
-    static final double     TURN_SPEED              = 0.5;
+    static double     DRIVE_SPEED             = 0.5;
+    static double     TURN_SPEED              = 0.5;
     static final DcMotor.Direction FORWARD = DcMotor.Direction.FORWARD;
     static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
-
+    static final DcMotor.RunMode STOP = DcMotor.RunMode.STOP_AND_RESET_ENCODER;
+    static final DcMotor.RunMode RUN = DcMotor.RunMode.RUN_USING_ENCODER;
     final int STARTING_POS = 719;
     int parking_zone = 2;
     final double flapUp = .57;
@@ -105,35 +109,41 @@ public class PowerPlayAuto extends LinearOpMode
     double                  globalAngle, power = .5, correction, rotation;
     PIDController           pidRotate, pidDrive;
 
-
+    /**Creates the motor with the given name and direction. Sets correct, modes, and zero power behaviour*/
     public DcMotor initMotor(String motorName, DcMotor.Direction direction){
         DcMotor motorVariable = hardwareMap.get(DcMotor.class, motorName);
         motorVariable.setDirection(direction);
-        motorVariable.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motorVariable.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorVariable.setMode(STOP);
+        motorVariable.setMode(RUN);
         motorVariable.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         return motorVariable;
     }
+
+    /**Creates the motor with the given name. Sets correct modes, direction, and zero power behaviour*/
     public DcMotor initMotor(String motorName){
         DcMotor motorVariable = hardwareMap.get(DcMotor.class, motorName);
         motorVariable.setDirection(FORWARD);
-        motorVariable.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motorVariable.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorVariable.setMode(STOP);
+        motorVariable.setMode(RUN);
         motorVariable.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         return motorVariable;
     }
+
+    /** Initialize logging*/
     public PowerPlayAuto() throws Exception
     {
         Logging.setup();
         Logging.log("Starting Tele-Op Logging");
     }
+
+    /**Main Code*/
     @Override
     public void runOpMode()
     {
 
-
+        //Initializing the motors
         frontRight = initMotor(names.fr);
         frontLeft = initMotor(names.fl, REVERSE);
         backRight = initMotor(names.br);
@@ -147,6 +157,7 @@ public class PowerPlayAuto extends LinearOpMode
 //        flapper.setPower(flapDown);
 
 
+        //Initializing the IMU and PID
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
         parameters.mode                = BNO055IMU.SensorMode.IMU;
@@ -212,7 +223,7 @@ public class PowerPlayAuto extends LinearOpMode
          * This REPLACES waitForStart!
          */
 
-
+        //This loop is initializing the camera and trying to identify an AprilTag using AprilTagPipeline
         while (!isStarted() && !isStopRequested())
         {
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
@@ -308,8 +319,9 @@ public class PowerPlayAuto extends LinearOpMode
         }
         else
         {
+
             if (parking_zone == 2){
-//                normalDrive();
+//normalDrive();
                 resetSlides();
                 encoderDrive(DRIVE_SPEED, 31, 31,5);
 
@@ -325,14 +337,12 @@ public class PowerPlayAuto extends LinearOpMode
                 sleep(250);
                 flapper.setPower(flapDown);
                 sleep(250);
-//            turnDegrees(TURN_SPEED, -90);
                 turnDegrees(TURN_SPEED, 90);
 
                 sleep(250);
-                encoderDrive(DRIVE_SPEED, 12, 12,5);
+                encoderDrive(DRIVE_SPEED, 13, 13,5);
                 sleep(250);
                 flapper.setPower(flapDown);
-//Add Code to face towards the middle for teleop to allow for easiest change.
 
             }
             if (parking_zone == 3){
@@ -352,7 +362,7 @@ public class PowerPlayAuto extends LinearOpMode
             }
         }
     }
-
+    /** Adds that the camera has detected the April_Tag in telemetry*/
     void tagToTelemetry(AprilTagDetection detection, int parking_zone)
     {
         telemetry.addData("Current Parking Zone: ", parking_zone);
@@ -366,6 +376,8 @@ public class PowerPlayAuto extends LinearOpMode
         telemetry.addData("Current Parking Zone: ", parking_zone);
 
     }
+
+    /** Adds that the camera has seen but not currently seeing the April_Tag in telemetry*/
     void tagToTelemetry(AprilTagDetection detection)
     {
         telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
@@ -378,7 +390,7 @@ public class PowerPlayAuto extends LinearOpMode
 
     }
 
-
+    /** Move the slides using SLIDE_POWER until they reach target or timeoutS seconds has passed */
     public void encoderIntake(double target, double timeoutS){
             double currentTime = getRuntime();
             int slidesPosition = slides.getCurrentPosition();
@@ -403,12 +415,15 @@ public class PowerPlayAuto extends LinearOpMode
                 }
     }
 
+    /**PID FUNCTION*/
     private void resetAngle()
     {
         lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
         globalAngle = 0;
     }
+
+    /**PID FUNCTION*/
     private double getAngle()
     {
         // We experimentally determined the Z axis is the axis we want to use for heading angle.
@@ -431,6 +446,8 @@ public class PowerPlayAuto extends LinearOpMode
 
         return globalAngle;
     }
+
+    /**PID FUNCTION*/
     private double checkDirection()
     {
         // The gain value determines how sensitive the correction is to direction changes.
@@ -450,6 +467,7 @@ public class PowerPlayAuto extends LinearOpMode
         return correction;
     }
 
+    /**Turn at power speed until the PID detects a change by degrees degrees*/
     private void turnDegrees(double power, int degrees)
     {
         double  leftPower, rightPower;
@@ -540,6 +558,7 @@ public class PowerPlayAuto extends LinearOpMode
         resetAngle();
     }
 
+    /**Turns on all the motors at speed speed and runs them until one motor reachs its target or timeoutS seconds have passed*/
     public void encoderDrive(double speed,
                              double leftInches, double rightInches,
                              double timeoutS) {
@@ -551,15 +570,15 @@ public class PowerPlayAuto extends LinearOpMode
         // Ensure that the opmode is still active
 
         if (opModeIsActive()) {
-            frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            frontLeft.setMode(STOP);
+            frontRight.setMode(STOP);
+            backLeft.setMode(STOP);
+            backRight.setMode(STOP);
 
-            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontLeft.setMode(RUN);
+            frontRight.setMode(RUN);
+            backLeft.setMode(RUN);
+            backRight.setMode(RUN);
 
             // Determine new target position, and pass to motor controller
             newLeftTarget = frontLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
@@ -627,47 +646,33 @@ public class PowerPlayAuto extends LinearOpMode
         }
 
     }
+
+    /**Takes the robot from the starting position on the right side and drives it to the high junction, turns, scores, turns back, drives back to the
+     * 1st tile of the second parking zone
+     */
     public void normalDrive(){
 //        encoderDrive(DRIVE_SPEED, 18, 18, 5);
         flapper.setPower(flapUp);
         sleep(250);
-        encoderIntake(0,5);
+      //  encoderIntake(0,5);
         flapper.setPower(flapDown);
         sleep(250);
-        encoderIntake(2000,5);
-        encoderDrive(DRIVE_SPEED,36,36,1);
-        turnDegrees(TURN_SPEED, 30);
-        encoderIntake(7500,5);
-        encoderDrive(DRIVE_SPEED, 4,4,5);
+      //  encoderIntake(2000,5);
+        encoderDrive(DRIVE_SPEED,INCHES_TO_HIGH_JUNCTION_BEFORE_TURN,INCHES_TO_HIGH_JUNCTION_BEFORE_TURN,1);
+        turnDegrees(TURN_SPEED, DEGREES_TO_HIGH_JUNCTION);
+      //  encoderIntake(7500,5);
+        encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_AFTER_TURN,INCHES_TO_HIGH_JUNCTION_AFTER_TURN,5);
         flapper.setPower(flapUp);
         sleep(250);
         flapper.setPower(flapDown);
         sleep(250);
         encoderDrive(DRIVE_SPEED, -25,-25,5);
-        encoderIntake(2500,5);
-//        armJoint2.setPosition(1);
+      //  encoderIntake(2500,5);
 
-//        encoderIntake(DRIVE_SPEED, 1840, 2);
-//        sleep(500);
-//        armJoint2.setPosition(0);
-//        encoderIntake(DRIVE_SPEED, 2040, 2);
-//        sleep(250);
-//        encoderIntake(DRIVE_SPEED, 1840,2);
-//        sleep(500);
-//        turnDegrees(DRIVE_SPEED, -25);
-//        sleep(500);
-//        claw.setPosition(clawOpen);
-//        sleep(500);
-//        armJoint2.setPosition(1);
-//        sleep(500);
-//        turnDegrees(DRIVE_SPEED, 25);
-//        sleep(100);
-//        claw.setPosition(clawClose);
-//        sleep(250);
-//        encoderIntake(DRIVE_SPEED, 0, 2);
-//        sleep(250);
 
     }
+
+    /** Flaps the flapper (not used in the parking zone code*/
     public void resetSlides(){
         flapper.setPower(flapUp);
         sleep(250);
@@ -676,9 +681,13 @@ public class PowerPlayAuto extends LinearOpMode
         sleep(250);
 //        encoderIntake(3356,5);
     }
+
+    /** Returns a boolean that depends on the motor.currentPosition() compared to position*/
     public boolean mode(DcMotor motor, int position){
         return -motor.getCurrentPosition() < position;
     }
+
+    /** Function that compares the motor position to their targets*/
     public boolean isBusy(DcMotor motor, int position, boolean mode){
         int motorPos = -motor.getCurrentPosition();
         Logging.log(motor.getDeviceName() + "'s current target is " + position + "and current position is " + motorPos);
@@ -690,6 +699,8 @@ public class PowerPlayAuto extends LinearOpMode
         }
 
     }
+
+    /** Returns a the input positive or negative based on the direction the robot needs to move*/
     public double speedConversion(Boolean mode, double speed){
         if (mode){
             return (speed);
