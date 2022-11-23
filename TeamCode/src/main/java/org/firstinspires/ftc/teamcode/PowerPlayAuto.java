@@ -21,6 +21,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -39,14 +40,16 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
-
-@Autonomous(name = "Skystone Auto", group = "Skystone")
+@Config
+@Autonomous(name = "PowerPlay Pushbot Auto", group = "Skystone")
 public class PowerPlayAuto extends LinearOpMode
 {
-    private static final double SLIDE_POWER = .5;
+    private static double SLIDE_POWER = .5;
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
-
+    public static int INCHES_TO_HIGH_JUNCTION_BEFORE_TURN = 30;
+    public static int DEGREES_TO_HIGH_JUNCTION = 30;
+    public static int INCHES_TO_HIGH_JUNCTION_AFTER_TURN = 5;
     final int ID_TAG_OF_INTEREST = 0;
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
@@ -82,11 +85,13 @@ public class PowerPlayAuto extends LinearOpMode
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * Math.PI);
-    static final double     DRIVE_SPEED             = 0.2;
-    static final double     TURN_SPEED              = 0.5;
+    static double     DRIVE_SPEED             = 0.5;
+    static double     TURN_SPEED              = 0.5;
     static final DcMotor.Direction FORWARD = DcMotor.Direction.FORWARD;
     static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
-
+    static final DcMotor.RunMode STOP = DcMotor.RunMode.STOP_AND_RESET_ENCODER;
+    static final DcMotor.RunMode RUN = DcMotor.RunMode.RUN_USING_ENCODER;
+    final int STARTING_POS = 719;
     int parking_zone = 2;
     final double flapUp = .57;
     final double flapDown = .77;
@@ -104,48 +109,55 @@ public class PowerPlayAuto extends LinearOpMode
     double                  globalAngle, power = .5, correction, rotation;
     PIDController           pidRotate, pidDrive;
 
-
+    /**Creates the motor with the given name and direction. Sets correct, modes, and zero power behaviour*/
     public DcMotor initMotor(String motorName, DcMotor.Direction direction){
         DcMotor motorVariable = hardwareMap.get(DcMotor.class, motorName);
         motorVariable.setDirection(direction);
-        motorVariable.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motorVariable.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorVariable.setMode(STOP);
+        motorVariable.setMode(RUN);
         motorVariable.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         return motorVariable;
     }
+
+    /**Creates the motor with the given name. Sets correct modes, direction, and zero power behaviour*/
     public DcMotor initMotor(String motorName){
         DcMotor motorVariable = hardwareMap.get(DcMotor.class, motorName);
         motorVariable.setDirection(FORWARD);
-        motorVariable.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motorVariable.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorVariable.setMode(STOP);
+        motorVariable.setMode(RUN);
         motorVariable.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         return motorVariable;
     }
+
+    /** Initialize logging*/
     public PowerPlayAuto() throws Exception
     {
         Logging.setup();
         Logging.log("Starting Tele-Op Logging");
     }
+
+    /**Main Code*/
     @Override
     public void runOpMode()
     {
 
+        //Initializing the motors
         frontRight = initMotor(names.fr);
         frontLeft = initMotor(names.fl, REVERSE);
         backRight = initMotor(names.br);
         backLeft = initMotor(names.bl, REVERSE);
-//        armJoint1 = initMotor("armJoint1", REVERSE);
-//
-//        armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
+
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         slides = hardwareMap.get(DcMotor.class, names.slides);
 
-        flapper.setPower(flapDown);
-//        armJoint2.setPosition(1);
-//        claw.setPosition(1);
+//        flapper.setPower(flapUp);
+//        encoderIntake(STARTING_POS,5);
+//        flapper.setPower(flapDown);
 
+
+        //Initializing the IMU and PID
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
         parameters.mode                = BNO055IMU.SensorMode.IMU;
@@ -211,7 +223,7 @@ public class PowerPlayAuto extends LinearOpMode
          * This REPLACES waitForStart!
          */
 
-
+        //This loop is initializing the camera and trying to identify an AprilTag using AprilTagPipeline
         while (!isStarted() && !isStopRequested())
         {
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
@@ -301,45 +313,16 @@ public class PowerPlayAuto extends LinearOpMode
             telemetry.update();
         }
 
-        /* Actually do something useful */
         if(tagOfInterest == null)
         {
-            /*
-             * Insert your autonomous code here, presumably running some default configuration
-             * since the tag was never sighted during INIT
-             */
-
-            //Guessing Parking Zone 2 If Tag Not Found
-//            normalDrive();
-
-//            sleep(250);
-//            turnDegrees(TURN_SPEED, -90);
-//            sleep(250);
-//            encoderDrive(DRIVE_SPEED, 21,21,5);
-//            encoderDrive(DRIVE_SPEED,20,20,3);
-//            turnDegrees(TURN_SPEED, 90);
-//            encoderDrive(DRIVE_SPEED, 28.5, 28.5,5);
-//            sleep(250);
-//            turnDegrees(TURN_SPEED, -90);
-//            normalDrive();
-normalDrive();//            sleep(250);
-//            flapper.setPower(flapDown);
-//            sleep(250);
-////            turnDegrees(TURN_SPEED, -90);
-//            turnDegrees(TURN_SPEED, 80);
-//
-//            sleep(250);
-//            encoderDrive(DRIVE_SPEED, 16, 16,5);
-
-
-//
-//            sleep(250);
-//            encoderDrive(DRIVE_SPEED, 12, 12,5);
+                normalDrive();
         }
         else
         {
+
             if (parking_zone == 2){
-//                normalDrive();
+//normalDrive();
+                resetSlides();
                 encoderDrive(DRIVE_SPEED, 31, 31,5);
 
             }
@@ -347,39 +330,39 @@ normalDrive();//            sleep(250);
 
             if (parking_zone == 1){
 //                normalDrive();
-                encoderDrive(DRIVE_SPEED, 29, 29,5);
+                resetSlides();
+                encoderDrive(DRIVE_SPEED, 24, 24,5);
                 flapper.setPower(.3);
 
                 sleep(250);
                 flapper.setPower(flapDown);
                 sleep(250);
-//            turnDegrees(TURN_SPEED, -90);
-                turnDegrees(TURN_SPEED, 75);
+                turnDegrees(TURN_SPEED, 90);
 
                 sleep(250);
-                encoderDrive(DRIVE_SPEED, 14, 14,5);
+                encoderDrive(DRIVE_SPEED, 13, 13,5);
                 sleep(250);
                 flapper.setPower(flapDown);
-//Add Code to face towards the middle for teleop to allow for easiest change.
 
             }
             if (parking_zone == 3){
-                encoderDrive(DRIVE_SPEED, 29, 29,5);
+                resetSlides();
+                encoderDrive(DRIVE_SPEED, 24.5, 24.5,5);
                 flapper.setPower(.3);
 
                 sleep(250);
                 flapper.setPower(flapDown);
                 sleep(250);
 
-                turnDegrees(TURN_SPEED, -80);
+                turnDegrees(TURN_SPEED, -85);
                 sleep(250);
-                encoderDrive(DRIVE_SPEED, 20, 20,5);
+                encoderDrive(DRIVE_SPEED, 14, 14,5);
                 sleep(250);
                 flapper.setPower(flapDown);
             }
         }
     }
-
+    /** Adds that the camera has detected the April_Tag in telemetry*/
     void tagToTelemetry(AprilTagDetection detection, int parking_zone)
     {
         telemetry.addData("Current Parking Zone: ", parking_zone);
@@ -393,6 +376,8 @@ normalDrive();//            sleep(250);
         telemetry.addData("Current Parking Zone: ", parking_zone);
 
     }
+
+    /** Adds that the camera has seen but not currently seeing the April_Tag in telemetry*/
     void tagToTelemetry(AprilTagDetection detection)
     {
         telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
@@ -405,41 +390,40 @@ normalDrive();//            sleep(250);
 
     }
 
-
-    public void encoderIntake(double speed, int ticks, double timeoutS){
-        slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        int slidesPosition = slides.getCurrentPosition();
-        if(opModeIsActive()) {
+    /** Move the slides using SLIDE_POWER until they reach target or timeoutS seconds has passed */
+    public void encoderIntake(double target, double timeoutS){
             double currentTime = getRuntime();
-            if (slidesPosition > ticks) {
-                slides.setPower(-speed);
-                while (slidesPosition > ticks && getRuntime() - currentTime < timeoutS) {
-                    telemetry.addData("Slide Position", slides.getCurrentPosition());
-                    telemetry.addData("Target Position", ticks);
-                    telemetry.update();
-                    slidesPosition = slides.getCurrentPosition();
+            int slidesPosition = slides.getCurrentPosition();
+                if (slidesPosition > target) {
+                    slides.setPower(-SLIDE_POWER);
+                    while (slidesPosition > target && getRuntime() - currentTime < 5) {
+                        telemetry.addData("Slide Position", slides.getCurrentPosition());
+                        telemetry.addData("Target Position", target);
+                        telemetry.update();
+                        slidesPosition = slides.getCurrentPosition();
+                    }
+                    slides.setPower(0);
+                } else if (slidesPosition < target) {
+                    slides.setPower(SLIDE_POWER);
+                    while (slidesPosition < target && getRuntime() - currentTime < 5) {
+                        telemetry.addData("Slide Position", slides.getCurrentPosition());
+                        telemetry.addData("Target Position", target);
+                        telemetry.update();
+                        slidesPosition = slides.getCurrentPosition();
+                    }
+                    slides.setPower(0);
                 }
-                slides.setPower(0);
-            } else if (slidesPosition < ticks) {
-                slides.setPower(speed);
-                while (slidesPosition < ticks && getRuntime() - currentTime < 5) {
-                    telemetry.addData("Slide Position", slides.getCurrentPosition());
-                    telemetry.addData("Target Position", ticks);
-                    telemetry.update();
-                    slidesPosition = slides.getCurrentPosition();
-                }
-                slides.setPower(0);
-            }
-        }
     }
+
+    /**PID FUNCTION*/
     private void resetAngle()
     {
         lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
         globalAngle = 0;
     }
+
+    /**PID FUNCTION*/
     private double getAngle()
     {
         // We experimentally determined the Z axis is the axis we want to use for heading angle.
@@ -462,6 +446,8 @@ normalDrive();//            sleep(250);
 
         return globalAngle;
     }
+
+    /**PID FUNCTION*/
     private double checkDirection()
     {
         // The gain value determines how sensitive the correction is to direction changes.
@@ -481,6 +467,7 @@ normalDrive();//            sleep(250);
         return correction;
     }
 
+    /**Turn at power speed until the PID detects a change by degrees degrees*/
     private void turnDegrees(double power, int degrees)
     {
         double  leftPower, rightPower;
@@ -528,10 +515,10 @@ normalDrive();//            sleep(250);
             while (opModeIsActive() && getAngle() == 0)
             {
 
-                backRight.setPower(power);
-                frontRight.setPower(power);
-                frontLeft.setPower(-power);
-                backLeft.setPower(-power);
+                backRight.setPower(-power);
+                frontRight.setPower(-power);
+                frontLeft.setPower(power);
+                backLeft.setPower(power);
                 sleep(100);
             }
 
@@ -571,6 +558,7 @@ normalDrive();//            sleep(250);
         resetAngle();
     }
 
+    /**Turns on all the motors at speed speed and runs them until one motor reachs its target or timeoutS seconds have passed*/
     public void encoderDrive(double speed,
                              double leftInches, double rightInches,
                              double timeoutS) {
@@ -582,15 +570,15 @@ normalDrive();//            sleep(250);
         // Ensure that the opmode is still active
 
         if (opModeIsActive()) {
-            frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            frontLeft.setMode(STOP);
+            frontRight.setMode(STOP);
+            backLeft.setMode(STOP);
+            backRight.setMode(STOP);
 
-            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            frontLeft.setMode(RUN);
+            frontRight.setMode(RUN);
+            backLeft.setMode(RUN);
+            backRight.setMode(RUN);
 
             // Determine new target position, and pass to motor controller
             newLeftTarget = frontLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
@@ -614,6 +602,10 @@ normalDrive();//            sleep(250);
             Boolean mode4 = mode(frontLeft, newLeftTarget);
 
             runtime.reset();
+            double frontLeftSpeed = speedConversion(mode1, speed);
+            double frontRightSpeed = speedConversion(mode2, speed);
+            double backLeftSpeed = speedConversion(mode3, speed);
+            double backRightSpeed = speedConversion(mode4, speed);
             frontLeft.setPower(speedConversion(mode1, speed));
             frontRight.setPower(speedConversion(mode2, speed));
             backLeft.setPower(speedConversion(mode3, speed));
@@ -623,10 +615,10 @@ normalDrive();//            sleep(250);
                     (isBusy(backRight, newBackRightTarget, mode1) && isBusy(backLeft, newBackLeftTarget, mode2) && isBusy(frontRight, newRightTarget, mode3) && isBusy(frontLeft, newLeftTarget, mode4))) {
                 correction = pidDrive.performPID(getAngle());
 
-                frontLeft.setPower(speed - correction);
-                frontRight.setPower(speed + correction);
-                backLeft.setPower(speed - correction);
-                backRight.setPower(speed + correction);
+                frontLeft.setPower(Math.max(.3,frontLeftSpeed - correction));
+                frontRight.setPower(Math.max(.3,frontRightSpeed + correction));
+                backLeft.setPower(Math.max(.3,backLeftSpeed - correction));
+                backRight.setPower(Math.max(.3,backRightSpeed + correction));
 
                 // Display it for the driver.
                 telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
@@ -654,48 +646,48 @@ normalDrive();//            sleep(250);
         }
 
     }
+
+    /**Takes the robot from the starting position on the right side and drives it to the high junction, turns, scores, turns back, drives back to the
+     * 1st tile of the second parking zone
+     */
     public void normalDrive(){
 //        encoderDrive(DRIVE_SPEED, 18, 18, 5);
+        flapper.setPower(flapUp);
+        sleep(250);
+      //  encoderIntake(0,5);
         flapper.setPower(flapDown);
         sleep(250);
-        encoderIntake(.5,1000,5);
-        encoderDrive(DRIVE_SPEED,36,36,1);
-        turnDegrees(TURN_SPEED, 30);
-        encoderIntake(.5,2588,5);
-        encoderDrive(DRIVE_SPEED, 4,4,5);
+      //  encoderIntake(2000,5);
+        encoderDrive(DRIVE_SPEED,INCHES_TO_HIGH_JUNCTION_BEFORE_TURN,INCHES_TO_HIGH_JUNCTION_BEFORE_TURN,1);
+        turnDegrees(TURN_SPEED, DEGREES_TO_HIGH_JUNCTION);
+      //  encoderIntake(7500,5);
+        encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_AFTER_TURN,INCHES_TO_HIGH_JUNCTION_AFTER_TURN,5);
         flapper.setPower(flapUp);
         sleep(250);
         flapper.setPower(flapDown);
         sleep(250);
-        encoderDrive(-DRIVE_SPEED, -25,-25,5);
-        encoderIntake(.5,-1000,5);
-//        armJoint2.setPosition(1);
+        encoderDrive(DRIVE_SPEED, -25,-25,5);
+      //  encoderIntake(2500,5);
 
-//        encoderIntake(DRIVE_SPEED, 1840, 2);
-//        sleep(500);
-//        armJoint2.setPosition(0);
-//        encoderIntake(DRIVE_SPEED, 2040, 2);
-//        sleep(250);
-//        encoderIntake(DRIVE_SPEED, 1840,2);
-//        sleep(500);
-//        turnDegrees(DRIVE_SPEED, -25);
-//        sleep(500);
-//        claw.setPosition(clawOpen);
-//        sleep(500);
-//        armJoint2.setPosition(1);
-//        sleep(500);
-//        turnDegrees(DRIVE_SPEED, 25);
-//        sleep(100);
-//        claw.setPosition(clawClose);
-//        sleep(250);
-//        encoderIntake(DRIVE_SPEED, 0, 2);
-//        sleep(250);
 
     }
 
+    /** Flaps the flapper (not used in the parking zone code*/
+    public void resetSlides(){
+        flapper.setPower(flapUp);
+        sleep(250);
+//        encoderIntake(0,5);
+        flapper.setPower(flapDown);
+        sleep(250);
+//        encoderIntake(3356,5);
+    }
+
+    /** Returns a boolean that depends on the motor.currentPosition() compared to position*/
     public boolean mode(DcMotor motor, int position){
         return -motor.getCurrentPosition() < position;
     }
+
+    /** Function that compares the motor position to their targets*/
     public boolean isBusy(DcMotor motor, int position, boolean mode){
         int motorPos = -motor.getCurrentPosition();
         Logging.log(motor.getDeviceName() + "'s current target is " + position + "and current position is " + motorPos);
@@ -707,6 +699,8 @@ normalDrive();//            sleep(250);
         }
 
     }
+
+    /** Returns a the input positive or negative based on the direction the robot needs to move*/
     public double speedConversion(Boolean mode, double speed){
         if (mode){
             return (speed);
