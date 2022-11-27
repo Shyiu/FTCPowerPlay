@@ -32,15 +32,21 @@ public class Testing_Motor extends LinearOpMode {
         while (opModeIsActive() && !isStopRequested()) {
             telemetry.addLine(testingMotor.getCurrentPosition() + "");
             if (Math.abs(gamepad1.left_stick_y) > 0){
-                power = -gamepad1.left_stick_y;
+                power = -gamepad1.left_stick_y/3.0;
             }
             else if (Math.abs(gamepad2.left_stick_y) > 0){
-                power = -gamepad2.left_stick_y;
+                power = -gamepad2.left_stick_y/3.0;
+            }
+            else if(gamepad1.right_bumper || gamepad2.right_bumper){
+                power = 1;
+            }
+            else if(gamepad1.left_bumper || gamepad2.left_bumper){
+                power = -1;
             }
             else{
                 power = 0;
             }
-            testingMotor.setPower(power/3.0);
+            testingMotor.setPower(power);
 
             telemetry.addLine("Gamepad1 Controls:\nLeft Stick Y Moves Motor");
             telemetry.addData("Slide Position", testingMotor.getCurrentPosition());

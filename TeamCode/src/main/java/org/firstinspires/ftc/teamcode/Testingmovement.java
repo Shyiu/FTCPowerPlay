@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name="Test that All motors are equal", group="Testing_Servo")
@@ -27,6 +28,20 @@ public class Testingmovement extends LinearOpMode {
         b.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         c.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         d.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        a.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        b.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        c.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        d.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        a.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        b.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        c.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        d.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        b.setDirection(DcMotorSimple.Direction.REVERSE);
+        c.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         a.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         b.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -58,7 +73,7 @@ public class Testingmovement extends LinearOpMode {
             telemetry.addLine(names.br + " position is " + d.getCurrentPosition());
 
             telemetry.update();
-            sleep(50000);
+            sleep(500000);
 //            testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 //            testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }

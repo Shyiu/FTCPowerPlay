@@ -1,21 +1,26 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@TeleOp(name="Wall Detection + Rumble Check", group = "Testing_Servo")
 @Disabled
+
+@TeleOp(name="Wall Detection + Rumble Check", group = "Testing_Servo")
 public class Wall_Detection extends LinearOpMode {
 
     // Initializes all four motors used in the drive train
     // This code will be using a Tank-drive system
     ModernRoboticsI2cRangeSensor rangeSensor;
     ElapsedTime runtime = new ElapsedTime();
+    FtcDashboard dashboard = FtcDashboard.getInstance();
+    Telemetry dashboardTelemetry = dashboard.getTelemetry();
     @Override
     public void runOpMode() {
 
@@ -27,6 +32,10 @@ public class Wall_Detection extends LinearOpMode {
             telemetry.addData("raw optical", rangeSensor.rawOptical());
             telemetry.addData("cm optical", "%.2f cm", rangeSensor.cmOptical());
             telemetry.addData("cm", "%.2f cm", rangeSensor.getDistance(DistanceUnit.CM));
+
+
+            dashboardTelemetry.addData("Distance", rangeSensor.getDistance(DistanceUnit.CM));
+            dashboardTelemetry.update();
             if (rangeSensor.getDistance(DistanceUnit.CM) < 4){
                 gamepad1.rumble(1 - rangeSensor.getDistance(DistanceUnit.CM)/4.0,1 - rangeSensor.getDistance(DistanceUnit.CM)/4.0,10);
             }
