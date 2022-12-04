@@ -23,10 +23,10 @@ public class PowerplayTeleOp extends ThreadOpMode {
     public PowerplayBot names = new PowerplayBot();
     //60 is encoder position
     //Slide Related Variables
-    final int TOP_HARDSTOP = 8425;
+    final int TOP_HARDSTOP = 7200;
     final int BOTTOM_HARDSTOP = 0;//Actually supposed to be 0
     final int STARTING_POS = 719;
-    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 3912, 6067, TOP_HARDSTOP};
+    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 3007, 5286, TOP_HARDSTOP};
     int slideIndex = 0;
     double slidesPosition = 0;
     final double SLIDE_POWER = .9;

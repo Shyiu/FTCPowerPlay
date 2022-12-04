@@ -40,9 +40,10 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
+
 @Config
-@Autonomous(name = "PowerPlay Pushbot Auto", group = "Skystone")
-public class PowerPlayAuto extends LinearOpMode
+@Autonomous(name = "PowerPlay Pushbot Auto LEFT SIDE", group = "Skystone")
+public class PowerPlayAutoLeft extends LinearOpMode
 {
     private static double SLIDE_POWER = .5;
     OpenCvCamera camera;
@@ -132,7 +133,7 @@ public class PowerPlayAuto extends LinearOpMode
     }
 
     /** Initialize logging*/
-    public PowerPlayAuto() throws Exception
+    public PowerPlayAutoLeft() throws Exception
     {
         Logging.setup();
         Logging.log("Starting Tele-Op Logging");
@@ -349,7 +350,7 @@ public class PowerPlayAuto extends LinearOpMode
             }
             if (parking_zone == 3){
                 resetSlides();
-                encoderDrive(DRIVE_SPEED, 29, 29,5);
+                encoderDrive(DRIVE_SPEED, 30, 30,5);
                 flapper.setPower(.3);
 
                 sleep(250);
