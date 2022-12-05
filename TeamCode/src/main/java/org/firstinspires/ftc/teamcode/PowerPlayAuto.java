@@ -27,6 +27,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -47,6 +49,7 @@ public class PowerPlayAuto extends LinearOpMode
     private static double SLIDE_POWER = .5;
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
+    public static NormalizedColorSensor color_sensor;
     public static int INCHES_TO_HIGH_JUNCTION_BEFORE_TURN = 30;
     public static int DEGREES_TO_HIGH_JUNCTION = 30;
     public static int INCHES_TO_HIGH_JUNCTION_AFTER_TURN = 5;
@@ -151,6 +154,8 @@ public class PowerPlayAuto extends LinearOpMode
 
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         slides = hardwareMap.get(DcMotor.class, names.slides);
+
+        color_sensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
 
 //        flapper.setPower(flapUp);
 //        encoderIntake(STARTING_POS,5);
@@ -316,7 +321,7 @@ public class PowerPlayAuto extends LinearOpMode
         if(tagOfInterest == null)
         {
 //                normalDrive();
-            encoderDrive(DRIVE_SPEED, 31, 31,5);
+            colorDrive();
 
         }
         else
@@ -711,6 +716,78 @@ public class PowerPlayAuto extends LinearOpMode
         }
         else{
             return (-speed);
+        }
+
+    }
+    public void colorDrive(){
+        if (opModeIsActive()) {
+            frontLeft.setMode(STOP);
+            frontRight.setMode(STOP);
+            backLeft.setMode(STOP);
+            backRight.setMode(STOP);
+
+            frontLeft.setMode(RUN);
+            frontRight.setMode(RUN);
+            backLeft.setMode(RUN);
+            backRight.setMode(RUN);
+
+            // Determine new target position, and pass to motor controlle
+
+
+            // reset the timeout time and start motion.
+
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+
+            runtime.reset();
+            double frontLeftSpeed = .5;
+            double frontRightSpeed = .5;
+            double backLeftSpeed = .5;
+            double backRightSpeed = .5;
+            frontLeft.setPower(frontLeftSpeed);
+            frontRight.setPower(frontRightSpeed);
+            backLeft.setPower(backLeftSpeed);
+            backRight.setPower(backRightSpeed);
+            NormalizedRGBA colors = color_sensor.getNormalizedColors();
+            color_sensor.setGain((float)6.25);
+            //6.25 .4
+            while (opModeIsActive() && colors.blue < .022) {
+                colors = color_sensor.getNormalizedColors();
+                correction = pidDrive.performPID(getAngle());
+
+                frontLeft.setPower(Math.max(.3,frontLeftSpeed - correction));
+                frontRight.setPower(Math.max(.3,frontRightSpeed + correction));
+                backLeft.setPower(Math.max(.3,backLeftSpeed - correction));
+                backRight.setPower(Math.max(.3,backRightSpeed + correction));
+
+                // Display it for the driver.
+                telemetry.addData("Currently at",  " at %7d :%7d",
+                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
+                telemetry.addData("Back Currently at",  " at %7d :%7d",
+
+                        backLeft.getCurrentPosition(), backRight.getCurrentPosition());
+                telemetry.addData("Inverse Current Position", frontLeft.getCurrentPosition() * -1);
+
+                telemetry.addData("Blue Value:", colors.blue);
+
+                telemetry.update();
+
+            }
+
+            // Stop all motion;
+            frontLeft.setPower(0);
+            frontRight.setPower(0);
+            backLeft.setPower(0);
+            backRight.setPower(0);
+
+            // Turn off RUN_TO_POSITION
+
+            sleep(250);   // optional pause after each move.
         }
 
     }

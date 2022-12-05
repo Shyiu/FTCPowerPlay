@@ -4,11 +4,15 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
 @TeleOp(name="Calibrate Slide to 0 Position", group="Testing_Servo")
-public class Testing_Motor extends LinearOpMode {
+public class CalibrationSlides extends LinearOpMode {
     DcMotor testingMotor;
+    DistanceSensor distance;
     Boolean a;//changes servo position by -0.1
     Boolean b;//changes servo position by -0.01
     Boolean y;//changes servo position by  0.01
@@ -25,6 +29,7 @@ public class Testing_Motor extends LinearOpMode {
         testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         testingMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        distance = hardwareMap.get(DistanceSensor.class, "sensor_distance");
         telemetry.addLine(testingMotor.getCurrentPosition() + "");
         telemetry.update();
         waitForStart();
@@ -49,6 +54,7 @@ public class Testing_Motor extends LinearOpMode {
             testingMotor.setPower(power);
 
             telemetry.addLine("Gamepad1 Controls:\nLeft Stick Y Moves Motor");
+            telemetry.addData("Distance", distance.getDistance(DistanceUnit.CM));
             telemetry.addData("Slide Position", testingMotor.getCurrentPosition());
             telemetry.addData("Slide power", testingMotor.getPower());
             telemetry.addData("power", -gamepad1.left_stick_y/3.0);
