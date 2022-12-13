@@ -3,6 +3,9 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 //cd C:\Users\vihas\Android\platform-tools
 //adb.exe
@@ -17,16 +20,17 @@ public class PowerplayTeleOp extends ThreadOpMode {
     protected DcMotor backLeft;
     protected DcMotor slides;
     protected DcMotorSimple flapper;
+    protected DistanceSensor distance;
     final boolean autoSlides = true;
 
     double leftTgtPower = 0, rightTgtPower = 0;
     public PowerplayBot names = new PowerplayBot();
     //60 is encoder position
     //Slide Related Variables
-    final int TOP_HARDSTOP = 7200;
-    final int BOTTOM_HARDSTOP = 0;//Actually supposed to be 0
+    final double TOP_HARDSTOP = 93.5;
+    final double BOTTOM_HARDSTOP = 27.8;//Actually supposed to be 0
     final int STARTING_POS = 719;
-    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 3007, 5286, TOP_HARDSTOP};
+    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 41, 66, TOP_HARDSTOP};
     int slideIndex = 0;
     double slidesPosition = 0;
     final double SLIDE_POWER = .9;
@@ -44,14 +48,15 @@ public class PowerplayTeleOp extends ThreadOpMode {
     public void mainInit() {
         slides = hardwareMap.get(DcMotor.class, names.slides);
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
+        distance = hardwareMap.get(DistanceSensor.class, names.distance);
 
         slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        slidesPosition = slides.getCurrentPosition();
+
 
 
         slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        telemetry.addData("Slide position", slides.getCurrentPosition());
+        telemetry.addData("Slide position", distance.getDistance(DistanceUnit.CM));
 
 
         // Pulls the motors from the robot configuration so that they can be manipulated
@@ -92,23 +97,19 @@ public class PowerplayTeleOp extends ThreadOpMode {
 
             }
         }));
-        registerThread(new TaskThread(new TaskThread.Actions(){
-            @Override
-            public void loop(){
-                Logging.log(Integer.toString(slides.getCurrentPosition()));
-            }
-        }));
+
         registerThread(new TaskThread(new TaskThread.Actions() {
             @Override
             public void loop() {
                 double slidePower = -gamepad2.left_stick_y;
-                if (slides.getCurrentPosition() > BOTTOM_HARDSTOP && slides.getCurrentPosition() < TOP_HARDSTOP) {
+                double distanceCM = distance.getDistance(DistanceUnit.CM);
+                if (distanceCM > BOTTOM_HARDSTOP && distanceCM < TOP_HARDSTOP) {
                     slides.setPower(slidePower);
                 }
-                else if (slides.getCurrentPosition() <= BOTTOM_HARDSTOP && slidePower > 0) {
+                else if (distanceCM <= BOTTOM_HARDSTOP && slidePower > 0) {
                     slides.setPower(slidePower);
                 }
-                else if (slides.getCurrentPosition() >= TOP_HARDSTOP && slidePower < 0) {
+                else if (distanceCM >= TOP_HARDSTOP && slidePower < 0) {
                     slides.setPower(slidePower);
                 }
                 else
@@ -152,22 +153,20 @@ public class PowerplayTeleOp extends ThreadOpMode {
     public void moveSlides(double target){
         double currentTime = getRuntime();
         if(autoSlides) {
-            if (slidesPosition > target) {
+            if (distance.getDistance(DistanceUnit.CM) > target) {
                 slides.setPower(-SLIDE_POWER);
-                while (slidesPosition > target && getRuntime() - currentTime < 5) {
-                    telemetry.addData("Slide Position", slides.getCurrentPosition());
+                while (distance.getDistance(DistanceUnit.CM) > target && getRuntime() - currentTime < 5) {
+                    telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
                     telemetry.addData("Target Position", target);
                     telemetry.update();
-                    slidesPosition = slides.getCurrentPosition();
                 }
                 slides.setPower(0);
-            } else if (slidesPosition < target) {
+            } else if (distance.getDistance(DistanceUnit.CM) < target) {
                 slides.setPower(SLIDE_POWER);
-                while (slidesPosition < target && getRuntime() - currentTime < 5) {
-                    telemetry.addData("Slide Position", slides.getCurrentPosition());
+                while (distance.getDistance(DistanceUnit.CM) < target && getRuntime() - currentTime < 5) {
+                    telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
                     telemetry.addData("Target Position", target);
                     telemetry.update();
-                    slidesPosition = slides.getCurrentPosition();
                 }
                 slides.setPower(0);
             }
@@ -181,7 +180,7 @@ public class PowerplayTeleOp extends ThreadOpMode {
         telemetry.addData("Front Left Motor Power", frontLeft.getPower());
         telemetry.addData("Back Right Motor Power", backRight.getPower());
         telemetry.addData("Back Left Motor Power", backLeft.getPower());
-        telemetry.addData("Slide Position", slides.getCurrentPosition());
+        telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
 
 
 

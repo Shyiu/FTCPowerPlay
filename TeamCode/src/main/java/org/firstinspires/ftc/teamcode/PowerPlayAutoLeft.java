@@ -24,15 +24,18 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
@@ -42,6 +45,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import java.util.ArrayList;
 
 @Config
+@Disabled
 @Autonomous(name = "PowerPlay Pushbot Auto LEFT SIDE", group = "Skystone")
 public class PowerPlayAutoLeft extends LinearOpMode
 {
@@ -105,6 +109,7 @@ public class PowerPlayAutoLeft extends LinearOpMode
     // forwards and a negative motor power to equal backwards
     DcMotor frontRight, frontLeft, backRight, backLeft, slides;
     DcMotorSimple flapper;
+    DistanceSensor distance;
     BNO055IMU imu;
     Orientation             lastAngles = new Orientation();
     double                  globalAngle, power = .5, correction, rotation;
@@ -152,6 +157,8 @@ public class PowerPlayAutoLeft extends LinearOpMode
 
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         slides = hardwareMap.get(DcMotor.class, names.slides);
+        distance = hardwareMap.get(DistanceSensor.class, names.distance);
+
 
 //        flapper.setPower(flapUp);
 //        encoderIntake(STARTING_POS,5);
@@ -398,23 +405,23 @@ public class PowerPlayAutoLeft extends LinearOpMode
     /** Move the slides using SLIDE_POWER until they reach target or timeoutS seconds has passed */
     public void encoderIntake(double target, double timeoutS){
             double currentTime = getRuntime();
-            int slidesPosition = slides.getCurrentPosition();
+            double slidesPosition = distance.getDistance(DistanceUnit.CM);
                 if (slidesPosition > target) {
                     slides.setPower(-SLIDE_POWER);
                     while (slidesPosition > target && getRuntime() - currentTime < 5) {
-                        telemetry.addData("Slide Position", slides.getCurrentPosition());
+                        telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
                         telemetry.addData("Target Position", target);
                         telemetry.update();
-                        slidesPosition = slides.getCurrentPosition();
+                        slidesPosition = distance.getDistance(DistanceUnit.CM);
                     }
                     slides.setPower(0);
                 } else if (slidesPosition < target) {
                     slides.setPower(SLIDE_POWER);
                     while (slidesPosition < target && getRuntime() - currentTime < 5) {
-                        telemetry.addData("Slide Position", slides.getCurrentPosition());
+                        telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
                         telemetry.addData("Target Position", target);
                         telemetry.update();
-                        slidesPosition = slides.getCurrentPosition();
+                        slidesPosition = distance.getDistance(DistanceUnit.CM);
                     }
                     slides.setPower(0);
                 }

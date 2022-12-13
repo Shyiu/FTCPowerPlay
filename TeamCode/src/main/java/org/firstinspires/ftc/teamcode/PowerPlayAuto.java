@@ -27,6 +27,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -35,6 +36,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
@@ -42,6 +44,7 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
+
 @Config
 @Autonomous(name = "PowerPlay Pushbot Auto", group = "Skystone")
 public class PowerPlayAuto extends LinearOpMode
@@ -50,9 +53,9 @@ public class PowerPlayAuto extends LinearOpMode
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
     public static NormalizedColorSensor color_sensor;
-    public static int INCHES_TO_HIGH_JUNCTION_BEFORE_TURN = 30;
-    public static int DEGREES_TO_HIGH_JUNCTION = 30;
-    public static int INCHES_TO_HIGH_JUNCTION_AFTER_TURN = 5;
+    public static int INCHES_TO_HIGH_JUNCTION_BEFORE_TURN = 43;
+    public static int DEGREES_TO_HIGH_JUNCTION = 28;
+    public static int INCHES_TO_HIGH_JUNCTION_AFTER_TURN = 6;
     final int ID_TAG_OF_INTEREST = 0;
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
@@ -94,7 +97,6 @@ public class PowerPlayAuto extends LinearOpMode
     static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
     static final DcMotor.RunMode STOP = DcMotor.RunMode.STOP_AND_RESET_ENCODER;
     static final DcMotor.RunMode RUN = DcMotor.RunMode.RUN_USING_ENCODER;
-    final int STARTING_POS = 719;
     int parking_zone = 2;
     final double flapUp = .57;
     final double flapDown = .77;
@@ -107,6 +109,7 @@ public class PowerPlayAuto extends LinearOpMode
     // forwards and a negative motor power to equal backwards
     DcMotor frontRight, frontLeft, backRight, backLeft, slides;
     DcMotorSimple flapper;
+    DistanceSensor distance;
     BNO055IMU imu;
     Orientation             lastAngles = new Orientation();
     double                  globalAngle, power = .5, correction, rotation;
@@ -134,13 +137,6 @@ public class PowerPlayAuto extends LinearOpMode
         return motorVariable;
     }
 
-    /** Initialize logging*/
-    public PowerPlayAuto() throws Exception
-    {
-        Logging.setup();
-        Logging.log("Starting Tele-Op Logging");
-    }
-
     /**Main Code*/
     @Override
     public void runOpMode()
@@ -154,12 +150,7 @@ public class PowerPlayAuto extends LinearOpMode
 
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         slides = hardwareMap.get(DcMotor.class, names.slides);
-
-        color_sensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
-
-//        flapper.setPower(flapUp);
-//        encoderIntake(STARTING_POS,5);
-//        flapper.setPower(flapDown);
+        distance = hardwareMap.get(DistanceSensor.class, names.distance);
 
 
         //Initializing the IMU and PID
@@ -200,6 +191,8 @@ public class PowerPlayAuto extends LinearOpMode
         pidDrive.setInputRange(-90,90);
         pidDrive.enable();
 
+        encoderIntake(32, 1);
+        flapper.setPower(.88);
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, names.camera), cameraMonitorViewId);
@@ -320,8 +313,7 @@ public class PowerPlayAuto extends LinearOpMode
 
         if(tagOfInterest == null)
         {
-//                normalDrive();
-            colorDrive();
+            normalDrive();
 
         }
         else
@@ -402,23 +394,23 @@ public class PowerPlayAuto extends LinearOpMode
     /** Move the slides using SLIDE_POWER until they reach target or timeoutS seconds has passed */
     public void encoderIntake(double target, double timeoutS){
             double currentTime = getRuntime();
-            int slidesPosition = slides.getCurrentPosition();
+            double slidesPosition = distance.getDistance(DistanceUnit.CM);
                 if (slidesPosition > target) {
                     slides.setPower(-SLIDE_POWER);
                     while (slidesPosition > target && getRuntime() - currentTime < 5) {
-                        telemetry.addData("Slide Position", slides.getCurrentPosition());
+                        telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
                         telemetry.addData("Target Position", target);
                         telemetry.update();
-                        slidesPosition = slides.getCurrentPosition();
+                        slidesPosition = distance.getDistance(DistanceUnit.CM);
                     }
                     slides.setPower(0);
                 } else if (slidesPosition < target) {
                     slides.setPower(SLIDE_POWER);
                     while (slidesPosition < target && getRuntime() - currentTime < 5) {
-                        telemetry.addData("Slide Position", slides.getCurrentPosition());
+                        telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
                         telemetry.addData("Target Position", target);
                         telemetry.update();
-                        slidesPosition = slides.getCurrentPosition();
+                        slidesPosition = distance.getDistance(DistanceUnit.CM);
                     }
                     slides.setPower(0);
                 }
@@ -660,23 +652,27 @@ public class PowerPlayAuto extends LinearOpMode
      * 1st tile of the second parking zone
      */
     public void normalDrive(){
-//        encoderDrive(DRIVE_SPEED, 18, 18, 5);
+
+        encoderIntake(36, 1);
         flapper.setPower(flapUp);
-        sleep(250);
-      //  encoderIntake(0,5);
+        encoderIntake(27.3,1);
         flapper.setPower(flapDown);
+        encoderIntake(46,2);
         sleep(250);
-      //  encoderIntake(2000,5);
-        encoderDrive(DRIVE_SPEED,INCHES_TO_HIGH_JUNCTION_BEFORE_TURN,INCHES_TO_HIGH_JUNCTION_BEFORE_TURN,1);
+        encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_BEFORE_TURN, INCHES_TO_HIGH_JUNCTION_BEFORE_TURN, 5);
+        sleep(250);
         turnDegrees(TURN_SPEED, DEGREES_TO_HIGH_JUNCTION);
-      //  encoderIntake(7500,5);
-        encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_AFTER_TURN,INCHES_TO_HIGH_JUNCTION_AFTER_TURN,5);
+        sleep(250);
+        encoderIntake(95.5,2);
+        sleep(250);
+        encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_AFTER_TURN, INCHES_TO_HIGH_JUNCTION_AFTER_TURN, 5);
+        sleep(250);
         flapper.setPower(flapUp);
         sleep(250);
-        flapper.setPower(flapDown);
-        sleep(250);
-        encoderDrive(DRIVE_SPEED, -25,-25,5);
-      //  encoderIntake(2500,5);
+
+
+
+
 
 
     }
@@ -688,6 +684,7 @@ public class PowerPlayAuto extends LinearOpMode
 //        encoderIntake(0,5);
         flapper.setPower(flapDown);
         sleep(250);
+
 //        encoderIntake(3356,5);
     }
 
