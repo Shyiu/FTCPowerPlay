@@ -19,6 +19,7 @@ public class PowerplayTeleOp extends ThreadOpMode {
     protected DcMotor frontLeft;
     protected DcMotor backLeft;
     protected DcMotor slides;
+    protected DcMotor tape;
     protected DcMotorSimple flapper;
     protected DistanceSensor distance;
     final boolean autoSlides = true;
@@ -49,7 +50,9 @@ public class PowerplayTeleOp extends ThreadOpMode {
         slides = hardwareMap.get(DcMotor.class, names.slides);
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         distance = hardwareMap.get(DistanceSensor.class, names.distance);
+        tape = hardwareMap.get(DcMotor.class, names.tape);
 
+        tape.setDirection(DcMotor.Direction.REVERSE);
         slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
 
@@ -102,6 +105,8 @@ public class PowerplayTeleOp extends ThreadOpMode {
             @Override
             public void loop() {
                 double slidePower = -gamepad2.left_stick_y;
+                double tapePower = gamepad2.left_trigger;
+
                 double distanceCM = distance.getDistance(DistanceUnit.CM);
                 if (distanceCM > BOTTOM_HARDSTOP && distanceCM < TOP_HARDSTOP) {
                     slides.setPower(slidePower);
@@ -115,7 +120,7 @@ public class PowerplayTeleOp extends ThreadOpMode {
                 else
                     slides.setPower(0);
 
-
+                tape.setPower(tapePower);
 
                 if (gamepad2.dpad_up){
                     if (slideIndex < SLIDE_POSITIONS.length - 1){

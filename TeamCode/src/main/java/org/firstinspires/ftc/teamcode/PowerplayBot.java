@@ -10,4 +10,5 @@ public final class PowerplayBot {
     public final String camera = "Webcam 1";
     public final String imu = "imu";
     public final String distance = "sensor_distance";
+    public final String tape = "tape_motor";
 }
