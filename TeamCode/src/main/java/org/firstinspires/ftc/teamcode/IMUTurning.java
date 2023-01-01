@@ -25,7 +25,7 @@ public class IMUTurning extends LinearOpMode
     DcMotor frontLeft, frontRight, backLeft, backRight;
     BNO055IMU               imu;
     Orientation             lastAngles = new Orientation();
-    double                  globalAngle, power = .5, correction;
+    double                  globalAngle, power = .3, correction;
     boolean                 aButton, bButton;
 
     // called when init button is  pressed.
