@@ -41,22 +41,27 @@ public class FiniteStateMachineOpModeTry2 extends OpMode {
     double armJoint2Increment = .025;
     double y2;
     double incrementWait = .5;
-    double armJoint2CurrentPos = armJoint2.getPosition();
-    double armJoint1CurrentPos = armJoint1.getCurrentPosition();
 
-    armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-    armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    double armJoint1Min = armJoint1CurrentPos;
+
+    double armJoint2CurrentPos = 0;
+    double armJoint1CurrentPos = 0;
+    double armJoint1Min = 0;
+
+    DcMotor armJoint1;
+    Servo armJoint2;
+    Servo claw;
 
     @Override
     public void init() {
-        DcMotor armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
-        Servo armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
-        Servo claw = hardwareMap.get(Servo.class, "claw_servo");
-
+        armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
+        armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
+        claw = hardwareMap.get(Servo.class, "claw_servo");
+        armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         armJoint1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
+        armJoint2CurrentPos = armJoint2.getPosition();
+        armJoint1CurrentPos = armJoint1.getCurrentPosition();
+        armJoint1Min = armJoint1CurrentPos;
         claw.setPosition(clawClose);
 
 
@@ -122,25 +127,24 @@ public class FiniteStateMachineOpModeTry2 extends OpMode {
             case MOVE_JOINT:
                 if (gamepad2.dpad_down || gamepad2.dpad_up) {
 
-                    if (gamepad2.dpad_up){
-                        if (servo_position != SERVO_POS.length - 1){
+                    if (gamepad2.dpad_up) {
+                        if (servo_position != SERVO_POS.length - 1) {
                             servo_position++;
-                        }
-                        else{
-                            servo_position=0;
-                        }
-                        armJoint2.setPosition(SERVO_POS[servo_position]);
-                        while (gamepad2.dpad_up){
-                            ;
-                        }
-                    }
-                    if (gamepad2.dpad_down){
-                        servo_position--;
-                        if (servo_position < 0){
+                        } else {
                             servo_position = 0;
                         }
                         armJoint2.setPosition(SERVO_POS[servo_position]);
-                        while (gamepad2.dpad_down){
+                        while (gamepad2.dpad_up) {
+                            ;
+                        }
+                    }
+                    if (gamepad2.dpad_down) {
+                        servo_position--;
+                        if (servo_position < 0) {
+                            servo_position = 0;
+                        }
+                        armJoint2.setPosition(SERVO_POS[servo_position]);
+                        while (gamepad2.dpad_down) {
                             ;
                         }
                     }
@@ -153,14 +157,12 @@ public class FiniteStateMachineOpModeTry2 extends OpMode {
                         claw.setPosition(clawOpen);
                         armJoint2.setPosition(1);
                         servo_position = 0;
-                    }
-                    else if(gamepad2.x){
+                    } else if (gamepad2.x) {
                         claw.setPosition(clawClose);
                     }
                     state = CommandState.MOVE_ROBOT;
                 }
                 break;
-
         }
 
 
@@ -194,7 +196,8 @@ public class FiniteStateMachineOpModeTry2 extends OpMode {
 
         }
 
-    }
+
+
     public static double negSqrt(double value){
         if(value >= 0){
             return Math.sqrt(value);
