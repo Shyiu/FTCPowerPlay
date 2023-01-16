@@ -1,27 +1,22 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-
+@Config
 @TeleOp(name="Calibrate Slide to 0 Position", group="Testing_Servo")
 public class CalibrationSlides extends LinearOpMode {
     DcMotor testingMotor;
-    DistanceSensor distance;
-    Boolean a;//changes servo position by -0.1
-    Boolean b;//changes servo position by -0.01
-    Boolean y;//changes servo position by  0.01
-    Boolean x;//changes servo position by  0.1
+    NormalizedColorSensor color;
+    public static double GAIN = 15;
     //1540 1008 86
     private ElapsedTime runtime = new ElapsedTime();
-
-    final int[] LEVELS = {86, 985};
-    int current_level = 0;
+    public int positions[] = {-5107, -1520, 644, 2800};
 
     @Override
     public void runOpMode() {
@@ -29,12 +24,21 @@ public class CalibrationSlides extends LinearOpMode {
         testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         testingMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        distance = hardwareMap.get(DistanceSensor.class, "sensor_distance");
+        color = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
         telemetry.addLine(testingMotor.getCurrentPosition() + "");
         telemetry.update();
+        NormalizedRGBA colors;
         waitForStart();
         double power = 0;
         while (opModeIsActive() && !isStopRequested()) {
+            if (gamepad1.y){
+                color.setGain((float) GAIN);
+                colors = color.getNormalizedColors();
+                while (colors.green < .52 && colors.red < .52){
+                    testingMotor.setPower(.3);
+                    colors = color.getNormalizedColors();
+                }
+            }
             telemetry.addLine(testingMotor.getCurrentPosition() + "");
             if (Math.abs(gamepad1.left_stick_y) > 0){
                 power = -gamepad1.left_stick_y/3.0;
@@ -51,10 +55,17 @@ public class CalibrationSlides extends LinearOpMode {
             else{
                 power = 0;
             }
+            if(gamepad1.a || gamepad2.a){
+                testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            }
             testingMotor.setPower(power);
-
+            colors = color.getNormalizedColors();
+            color.setGain((float)GAIN);
             telemetry.addLine("Gamepad1 Controls:\nLeft Stick Y Moves Motor");
-            telemetry.addData("Distance", distance.getDistance(DistanceUnit.CM));
+            telemetry.addData("Color Blue", colors.blue);
+            telemetry.addData("Color Red", colors.red);
+            telemetry.addData("Color Green", colors.green);
             telemetry.addData("Slide Position", testingMotor.getCurrentPosition());
             telemetry.addData("Slide power", testingMotor.getPower());
             telemetry.addData("power", -gamepad1.left_stick_y/3.0);

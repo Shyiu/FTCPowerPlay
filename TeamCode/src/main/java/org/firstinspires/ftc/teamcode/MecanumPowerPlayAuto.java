@@ -29,7 +29,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
-import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -113,7 +112,7 @@ public class MecanumPowerPlayAuto extends LinearOpMode
     BNO055IMU imu;
     Orientation             lastAngles = new Orientation();
     double                  globalAngle, power = .5, correction, rotation;
-    PIDController           pidRotate, pidDrive;*/
+    PIDController           pidRotate, pidDrive;
 
     //Creates the motor with the given name and direction. Sets correct, modes, and zero power behaviour*/
     public DcMotor initMotor(String motorName, DcMotor.Direction direction){

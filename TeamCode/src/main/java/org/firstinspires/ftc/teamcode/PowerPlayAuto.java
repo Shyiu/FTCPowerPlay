@@ -27,7 +27,6 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -36,7 +35,6 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
@@ -53,9 +51,17 @@ public class PowerPlayAuto extends LinearOpMode
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
     public static NormalizedColorSensor color_sensor;
-    public static int INCHES_TO_HIGH_JUNCTION_BEFORE_TURN = 43;
-    public static int DEGREES_TO_HIGH_JUNCTION = 28;
-    public static int INCHES_TO_HIGH_JUNCTION_AFTER_TURN = 6;
+    public static int INCHES_TO_HIGH_JUNCTION_BEFORE_TURN = 31;
+    public static int DEGREES_TO_HIGH_JUNCTION = 27;
+    public static int INCHES_TO_HIGH_JUNCTION_AFTER_TURN = 1;
+    public static double DISTANCE_TO_FIRST_TILE = 24;
+    public static boolean TURN = false;
+    public static boolean DRIVEAFTERTURN = false;
+    public static boolean SCORE = false;
+    public static boolean MOVESLIDES = false;
+    public static double P = 0.1675;
+    public static double I = 0.0008;
+    public static double D = 0;
     final int ID_TAG_OF_INTEREST = 0;
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
@@ -91,8 +97,8 @@ public class PowerPlayAuto extends LinearOpMode
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * Math.PI);
-    static double     DRIVE_SPEED             = 0.5;
-    static double     TURN_SPEED              = 0.5;
+    public static double     DRIVE_SPEED             = 0.5;
+    static double     TURN_SPEED              = 0.3;
     static final DcMotor.Direction FORWARD = DcMotor.Direction.FORWARD;
     static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
     static final DcMotor.RunMode STOP = DcMotor.RunMode.STOP_AND_RESET_ENCODER;
@@ -109,10 +115,10 @@ public class PowerPlayAuto extends LinearOpMode
     // forwards and a negative motor power to equal backwards
     DcMotor frontRight, frontLeft, backRight, backLeft, slides;
     DcMotorSimple flapper;
-    DistanceSensor distance;
+    NormalizedColorSensor color;
     BNO055IMU imu;
     Orientation             lastAngles = new Orientation();
-    double                  globalAngle, power = .5, correction, rotation;
+    public static double                  globalAngle, power = .5, correction, rotation;
     PIDController           pidRotate, pidDrive;
 
     /**Creates the motor with the given name and direction. Sets correct, modes, and zero power behaviour*/
@@ -150,7 +156,7 @@ public class PowerPlayAuto extends LinearOpMode
 
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         slides = hardwareMap.get(DcMotor.class, names.slides);
-        distance = hardwareMap.get(DistanceSensor.class, names.distance);
+        color = hardwareMap.get(NormalizedColorSensor.class, names.color);
 
 
         //Initializing the IMU and PID
@@ -168,9 +174,9 @@ public class PowerPlayAuto extends LinearOpMode
 
         imu.initialize(parameters);
 
-        pidRotate = new PIDController(0.003,0.000003,0);
+        pidRotate = new PIDController(0.005,0.00003,0);
 
-        pidDrive = new PIDController(.15,0,0);
+        pidDrive = new PIDController(P,I,D);
 
         telemetry.addData("Mode", "calibrating...");
         telemetry.update();
@@ -190,8 +196,17 @@ public class PowerPlayAuto extends LinearOpMode
         pidDrive.setOutputRange(0,power);
         pidDrive.setInputRange(-90,90);
         pidDrive.enable();
+        color.setGain((float) 15);
+        slides.setPower(.7);
+        NormalizedRGBA colors = color.getNormalizedColors();
+        while (colors.green < .52 && colors.red < .52){
 
-        encoderIntake(32, 1);
+            colors = color.getNormalizedColors();
+
+        }
+        slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        encoderIntake(-4000, 1);
         flapper.setPower(.88);
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -321,7 +336,7 @@ public class PowerPlayAuto extends LinearOpMode
 
             if (parking_zone == 2){
 //normalDrive();
-                resetSlides();
+//                resetSlides();
                 encoderDrive(DRIVE_SPEED, 31, 31,5);
 
             }
@@ -329,33 +344,34 @@ public class PowerPlayAuto extends LinearOpMode
 
             if (parking_zone == 1){
 //                normalDrive();
-                resetSlides();
-                encoderDrive(DRIVE_SPEED, 28, 28,5);
+//                resetSlides();
+                encoderIntake(28,2);
+                encoderDrive(DRIVE_SPEED, DISTANCE_TO_FIRST_TILE, DISTANCE_TO_FIRST_TILE,5);
                 flapper.setPower(.3);
 
                 sleep(250);
                 flapper.setPower(flapDown);
                 sleep(250);
-                turnDegrees(TURN_SPEED, 90);
+                turnDegrees(TURN_SPEED, 83);
 
                 sleep(250);
-                encoderDrive(DRIVE_SPEED, 15, 15,5);
+                encoderDrive(DRIVE_SPEED, 12, 12,5);
                 sleep(250);
                 flapper.setPower(flapDown);
 
             }
             if (parking_zone == 3){
-                resetSlides();
-                encoderDrive(DRIVE_SPEED, 29, 29,5);
-                flapper.setPower(.3);
-
-                sleep(250);
-                flapper.setPower(flapDown);
-                sleep(250);
+//                resetSlides();
+//                encoderDrive(DRIVE_SPEED, 29, 29,5);
+//                flapper.setPower(.3);
+//
+//                sleep(250);
+//                flapper.setPower(flapDown);
+//                sleep(250);
 
                 turnDegrees(TURN_SPEED, -85);
                 sleep(250);
-                encoderDrive(DRIVE_SPEED, 18, 18,5);
+                encoderDrive(DRIVE_SPEED, 9, 9,5);
                 sleep(250);
                 flapper.setPower(flapDown);
             }
@@ -392,30 +408,29 @@ public class PowerPlayAuto extends LinearOpMode
     }
 
     /** Move the slides using SLIDE_POWER until they reach target or timeoutS seconds has passed */
-    public void encoderIntake(double target, double timeoutS){
-            double currentTime = getRuntime();
-            double slidesPosition = distance.getDistance(DistanceUnit.CM);
-                if (slidesPosition > target) {
-                    slides.setPower(-SLIDE_POWER);
-                    while (slidesPosition > target && getRuntime() - currentTime < 5) {
-                        telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
-                        telemetry.addData("Target Position", target);
-                        telemetry.update();
-                        slidesPosition = distance.getDistance(DistanceUnit.CM);
-                    }
-                    slides.setPower(0);
-                } else if (slidesPosition < target) {
-                    slides.setPower(SLIDE_POWER);
-                    while (slidesPosition < target && getRuntime() - currentTime < 5) {
-                        telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
-                        telemetry.addData("Target Position", target);
-                        telemetry.update();
-                        slidesPosition = distance.getDistance(DistanceUnit.CM);
-                    }
-                    slides.setPower(0);
-                }
+    public void encoderIntake(double target, double timeoutS) {
+        double currentTime = getRuntime();
+        double slidesPosition = slides.getCurrentPosition();
+        if (slidesPosition > target) {
+            slides.setPower(-SLIDE_POWER);
+            while (slidesPosition > target && getRuntime() - currentTime < 5) {
+                telemetry.addData("Slide Position", slides.getCurrentPosition());
+                telemetry.addData("Target Position", target);
+                telemetry.update();
+                slidesPosition = slides.getCurrentPosition();
+            }
+            slides.setPower(0);
+        } else if (slidesPosition < target) {
+            slides.setPower(SLIDE_POWER);
+            while (slidesPosition < target && getRuntime() - currentTime < 5) {
+                telemetry.addData("Slide Position", slides.getCurrentPosition());
+                telemetry.addData("Target Position", target);
+                telemetry.update();
+                slidesPosition = slides.getCurrentPosition();
+            }
+            slides.setPower(0);
+        }
     }
-
     /**PID FUNCTION*/
     private void resetAngle()
     {
@@ -652,25 +667,31 @@ public class PowerPlayAuto extends LinearOpMode
      * 1st tile of the second parking zone
      */
     public void normalDrive(){
-
-        encoderIntake(36, 1);
-        flapper.setPower(flapUp);
-        encoderIntake(27.3,1);
-        flapper.setPower(flapDown);
-        encoderIntake(46,2);
-        sleep(250);
+        if (MOVESLIDES) {
+            encoderIntake(36, 1);
+            flapper.setPower(flapUp);
+            encoderIntake(27.3, 1);
+            flapper.setPower(flapDown);
+            encoderIntake(36, 2);
+            sleep(250);
+        }
         encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_BEFORE_TURN, INCHES_TO_HIGH_JUNCTION_BEFORE_TURN, 5);
-        sleep(250);
-        turnDegrees(TURN_SPEED, DEGREES_TO_HIGH_JUNCTION);
-        sleep(250);
-        encoderIntake(95.5,2);
-        sleep(250);
-        encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_AFTER_TURN, INCHES_TO_HIGH_JUNCTION_AFTER_TURN, 5);
-        sleep(250);
-        flapper.setPower(flapUp);
-        sleep(250);
+        if (TURN) {
+            sleep(250);
+            turnDegrees(TURN_SPEED, DEGREES_TO_HIGH_JUNCTION);
+            sleep(250);
+        }
+        if (SCORE) {
+            encoderIntake(95.5, 2);
+            sleep(250);
+        }
+        if (DRIVEAFTERTURN) {
+            encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_AFTER_TURN, INCHES_TO_HIGH_JUNCTION_AFTER_TURN, 5);
+            sleep(250);
+            flapper.setPower(flapUp);
+            sleep(250);
 
-
+        }
 
 
 
