@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
-public final class PowerplayBot {
+public final class MecanumBot {
     public final String fr = "frontRight";
     public final String fl = "frontLeft";
     public final String bl = "backLeft";
@@ -10,6 +10,7 @@ public final class PowerplayBot {
     public final String camera = "Webcam 1";
     public final String imu = "imu";
     public final String distance = "sensor_distance";
-    public final String tape = "tape_motor";
     public final String color = "sensor_color";
+
+    public final String tape = "tape_motor";
 }
