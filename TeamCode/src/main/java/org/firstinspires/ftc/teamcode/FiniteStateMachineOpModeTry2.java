@@ -1,22 +1,21 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@Disabled
-@TeleOp
+@TeleOp(group = "Mecanum Tele-Op", name = "Mecanum Powerplay Teleop")
 public class FiniteStateMachineOpModeTry2 extends OpMode {
     //
 
     public enum CommandState {
         MOVE_ARM,
         MOVE_JOINT,
-        MOVE_CLAW,
-        MOVE_ROBOT
+        MOVE_CLAW
     };
 
     CommandState state = CommandState.MOVE_ARM;
@@ -28,6 +27,8 @@ public class FiniteStateMachineOpModeTry2 extends OpMode {
     protected DcMotor backRight;
     protected DcMotor frontLeft;
     protected DcMotor backLeft;
+    protected DcMotor slides;
+    protected NormalizedColorSensor color;
 
     final int[] LEVELS = {86, 1008, 1540};
     final double[] SERVO_POS = {.58,1,.22,0};
@@ -50,120 +51,73 @@ public class FiniteStateMachineOpModeTry2 extends OpMode {
     DcMotor armJoint1;
     Servo armJoint2;
     Servo claw;
-
+    BNO055IMU imu;
+    MecanumBot m = new MecanumBot();
     @Override
     public void init() {
-        armJoint1 = hardwareMap.get(DcMotor.class, "joint_motor");
-        armJoint2 = hardwareMap.get(Servo.class, "joint_servo");
-        claw = hardwareMap.get(Servo.class, "claw_servo");
-        armJoint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armJoint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        armJoint1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armJoint2CurrentPos = armJoint2.getPosition();
-        armJoint1CurrentPos = armJoint1.getCurrentPosition();
-        armJoint1Min = armJoint1CurrentPos;
-        claw.setPosition(clawClose);
 
 
         // Pulls the motors from the robot configuration so that they can be manipulated
-        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
-        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
-        backRight = hardwareMap.get(DcMotor.class, "backRight");
-        backLeft = hardwareMap.get(DcMotor.class, "backLeft");
+        frontRight = hardwareMap.get(DcMotor.class, m.fr);
+        frontLeft = hardwareMap.get(DcMotor.class, m.fl);
+        backRight = hardwareMap.get(DcMotor.class, m.br);
+        backLeft = hardwareMap.get(DcMotor.class, m.bl);
 
-
+        slides = hardwareMap.get(DcMotor.class, m.slides);
+        color = hardwareMap.get(NormalizedColorSensor.class, m.color);
+        imu = hardwareMap.get(BNO055IMU.class, m.imu);
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        // Technically this is the default, however specifying it is clearer
+        parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
+        // Without this, data retrieving from the IMU throws an exception
+        imu.initialize(parameters);
 
         // Reverses the direction of the left motors, to allow a positive motor power to equal
         // forwards and a negative motor power to equal backwards
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
 
 
 
         // Makes the Driver Hub output the message "Status: Initialized"
         telemetry.addData("Status", "Initialized");
         telemetry.update();
-        Servo.Direction direction = Servo.Direction.FORWARD;
+        color.setGain((float)15);
+        NormalizedRGBA colors = color.getNormalizedColors();
+        while (colors.green < .52 && colors.red < .52){
+            slides.setPower(.3);
+            colors = color.getNormalizedColors();
+        }
+
 
     }
 
     @Override
     public void loop() {
 
+        double y = -gamepad1.left_stick_y; // Remember, this is reversed!
+        double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+        double rx = gamepad1.right_stick_x;
 
+        // Read inverse IMU heading, as the IMU heading is CW positive
+        double botHeading = -imu.getAngularOrientation().firstAngle;
 
-        // Wait for the game to start (driver presses PLAY)
+        double rotX = x * Math.cos(botHeading) - y * Math.sin(botHeading);
+        double rotY = x * Math.sin(botHeading) + y * Math.cos(botHeading);
 
-        // run until the end of the match (driver presses STOP)
+        // Denominator is the largest motor power (absolute value) or 1
+        // This ensures all the powers maintain the same ratio, but only when
+        // at least one is out of the range [-1, 1]
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+        double frontLeftPower = (rotY + rotX + rx) / denominator;
+        double backLeftPower = (rotY - rotX + rx) / denominator;
+        double frontRightPower = (rotY - rotX - rx) / denominator;
+        double backRightPower = (rotY + rotX - rx) / denominator;
 
-
-
-            // Takes the current y-position of both the left and right joy-sticks
-            // The highest position of a joystick is equal to -1, and the bottommost position of the
-            // joystick is equal to 1
-        switch (state) {
-            case MOVE_ROBOT:
-                if (this.gamepad1.left_stick_y != 0 || this.gamepad1.right_stick_y != 0) {
-                    double leftTgtPower = -this.gamepad1.left_stick_y;
-                    double rightTgtPower = -this.gamepad1.right_stick_y;
-
-                    frontLeft.setPower(leftTgtPower);
-                    backLeft.setPower(leftTgtPower);
-                    frontRight.setPower(rightTgtPower);
-                    backRight.setPower(rightTgtPower);
-                    telemetry.addData("Left Target Power", leftTgtPower);
-                    telemetry.addData("Right Target Power", rightTgtPower);
-                    state = CommandState.MOVE_ARM;
-
-                }
-                break;
-            case MOVE_ARM:
-                if (gamepad2.left_stick_y != 0) {
-                    y2 = gamepad2.left_stick_y;
-                    armJoint1.setPower(negSqrt(y2));
-                    state = CommandState.MOVE_JOINT;
-                }
-                break;
-            case MOVE_JOINT:
-                if (gamepad2.dpad_down || gamepad2.dpad_up) {
-
-                    if (gamepad2.dpad_up) {
-                        if (servo_position != SERVO_POS.length - 1) {
-                            servo_position++;
-                        } else {
-                            servo_position = 0;
-                        }
-                        armJoint2.setPosition(SERVO_POS[servo_position]);
-                        while (gamepad2.dpad_up) {
-                            ;
-                        }
-                    }
-                    if (gamepad2.dpad_down) {
-                        servo_position--;
-                        if (servo_position < 0) {
-                            servo_position = 0;
-                        }
-                        armJoint2.setPosition(SERVO_POS[servo_position]);
-                        while (gamepad2.dpad_down) {
-                            ;
-                        }
-                    }
-                    state = CommandState.MOVE_CLAW;
-                }
-                break;
-            case MOVE_CLAW:
-                if (gamepad2.x || gamepad2.y) {
-                    if (gamepad2.y) {
-                        claw.setPosition(clawOpen);
-                        armJoint2.setPosition(1);
-                        servo_position = 0;
-                    } else if (gamepad2.x) {
-                        claw.setPosition(clawClose);
-                    }
-                    state = CommandState.MOVE_ROBOT;
-                }
-                break;
-        }
+        frontLeft.setPower(frontLeftPower);
+        backLeft.setPower(backLeftPower);
+        frontRight.setPower(frontRightPower);
+        backRight.setPower(backRightPower);
 
 
 
@@ -180,8 +134,7 @@ public class FiniteStateMachineOpModeTry2 extends OpMode {
             // Right Target Power: A float from [-1,1]
             // The current power of each motor
 
-            telemetry.addData("Arm Position", armJoint1.getCurrentPosition());
-            telemetry.addData("Arm Min Position", armJoint1Min);
+
             telemetry.addData("Front Right Motor Power", frontRight.getPower());
             telemetry.addData("Front Left Motor Power", frontLeft.getPower());
             telemetry.addData("Back Right Motor Power", backRight.getPower());
@@ -195,15 +148,4 @@ public class FiniteStateMachineOpModeTry2 extends OpMode {
             telemetry.update();
 
         }
-
-
-
-    public static double negSqrt(double value){
-        if(value >= 0){
-            return Math.sqrt(value);
-        }
-        else{
-            return -1 * Math.sqrt((-1*value));
-        }
-    }
 }
