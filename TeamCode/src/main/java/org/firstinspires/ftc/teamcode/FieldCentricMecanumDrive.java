@@ -27,8 +27,8 @@ public class FieldCentricMecanumDrive extends LinearOpMode {
 
         // Reverse the right side motors
         // Reverse left motors if you are using NeveRests
-        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        backRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Retrieve the IMU from the hardware map
         BNO055IMU imu = hardwareMap.get(BNO055IMU.class, names.imu);
@@ -46,7 +46,7 @@ public class FieldCentricMecanumDrive extends LinearOpMode {
             double y = -gamepad1.left_stick_y; // Remember, this is reversed!
             double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
             double rx = gamepad1.right_stick_x;
-            double speed_reduction_factor = .5;
+            double speed_reduction_factor = 1;
             // Read inverse IMU heading, as the IMU heading is CW positive
             double botHeading = -imu.getAngularOrientation().firstAngle;
 
@@ -66,6 +66,9 @@ public class FieldCentricMecanumDrive extends LinearOpMode {
             backLeft.setPower(backLeftPower * speed_reduction_factor);
             frontRight.setPower(frontRightPower * speed_reduction_factor);
             backRight.setPower(backRightPower * speed_reduction_factor);
+            telemetry.addData("br",backRight.getCurrentPosition());
+            telemetry.addData("bl",backLeft.getCurrentPosition());
+            telemetry.update();
         }
     }
 }

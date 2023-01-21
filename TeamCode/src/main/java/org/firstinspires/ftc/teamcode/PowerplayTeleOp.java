@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -12,6 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 // adb pull sdcard/Logging.txt c:\temp\robot_Logging.txt
 
 //Above command for Log File
+@Disabled
 @TeleOp(name = "PowerPlay Tele Op", group = "Tele-Op")
 public class PowerplayTeleOp extends ThreadOpMode {
     protected DcMotor frontRight;
