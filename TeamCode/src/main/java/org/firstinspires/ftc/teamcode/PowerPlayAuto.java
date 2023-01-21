@@ -21,9 +21,9 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -43,8 +43,8 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Disabled
-@Autonomous(name = "PowerPlay Pushbot Auto", group = "Skystone")
+@Config
+@Autonomous(name = "Mecanum Auto", group = "Skystone")
 public class PowerPlayAuto extends LinearOpMode
 {
     private static double SLIDE_POWER = .5;
@@ -59,7 +59,7 @@ public class PowerPlayAuto extends LinearOpMode
     public static boolean DRIVEAFTERTURN = false;
     public static boolean SCORE = false;
     public static boolean MOVESLIDES = false;
-    public static double P = 0.1675;
+    public static double P = 0.182;
     public static double I = 0.0008;
     public static double D = 0;
     final int ID_TAG_OF_INTEREST = 0;
@@ -97,7 +97,7 @@ public class PowerPlayAuto extends LinearOpMode
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * Math.PI);
-    public static double     DRIVE_SPEED             = 0.5;
+    public static double     DRIVE_SPEED             = 0.4;
     static double     TURN_SPEED              = 0.3;
     static final DcMotor.Direction FORWARD = DcMotor.Direction.FORWARD;
     static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
@@ -149,10 +149,10 @@ public class PowerPlayAuto extends LinearOpMode
     {
 
         //Initializing the motors
-        frontRight = initMotor(names.fr);
-        frontLeft = initMotor(names.fl, REVERSE);
-        backRight = initMotor(names.br);
-        backLeft = initMotor(names.bl, REVERSE);
+        frontRight = initMotor(names.fr, REVERSE);
+        frontLeft = initMotor(names.fl);
+        backRight = initMotor(names.br, REVERSE);
+        backLeft = initMotor(names.bl);
 
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         slides = hardwareMap.get(DcMotor.class, names.slides);
@@ -196,17 +196,17 @@ public class PowerPlayAuto extends LinearOpMode
         pidDrive.setOutputRange(0,power);
         pidDrive.setInputRange(-90,90);
         pidDrive.enable();
-        color.setGain((float) 15);
-        slides.setPower(.7);
-        NormalizedRGBA colors = color.getNormalizedColors();
-        while (colors.green < .52 && colors.red < .52){
-
-            colors = color.getNormalizedColors();
-
-        }
-        slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        encoderIntake(-4000, 1);
+//        color.setGain((float) 15);
+//        slides.setPower(.7);
+//        NormalizedRGBA colors = color.getNormalizedColors();
+//        while (colors.green < .52 && colors.red < .52){
+//
+//            colors = color.getNormalizedColors();
+//
+//        }
+//        slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        encoderIntake(-4000, 1);
         flapper.setPower(.88);
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -328,7 +328,8 @@ public class PowerPlayAuto extends LinearOpMode
 
         if(tagOfInterest == null)
         {
-            normalDrive();
+            encoderDrive(.3,16,16,5);
+            strafe(.3, 10,3,"right");
 
         }
         else
@@ -662,7 +663,86 @@ public class PowerPlayAuto extends LinearOpMode
         }
 
     }
+    public void strafe(double speed,
+                       double inches,
+                       double timeoutS, String direction) {
+        int newLeftTarget;
+        int newRightTarget;
 
+
+        // Ensure that the opmode is still active
+
+        if (opModeIsActive()) {
+            frontLeft.setMode(STOP);
+            frontRight.setMode(STOP);
+            backLeft.setMode(STOP);
+            backRight.setMode(STOP);
+
+            frontLeft.setMode(RUN);
+            frontRight.setMode(RUN);
+            backLeft.setMode(RUN);
+            backRight.setMode(RUN);
+
+            Boolean dir;
+
+            // Determine new target position, and pass to motor controller
+            if (direction.indexOf("i") == -1) {
+                newLeftTarget = frontLeft.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
+                newRightTarget = frontRight.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
+                frontRight.setPower(speed);
+                backLeft.setPower(speed);
+                frontLeft.setPower(-speed);
+                backRight.setPower(-speed);
+                dir = true;
+            }
+            else{
+                newLeftTarget = frontLeft.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
+                newRightTarget = frontRight.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
+                frontRight.setPower(-speed);
+                backLeft.setPower(-speed);
+                frontLeft.setPower(speed);
+                backRight.setPower(speed);
+                dir =false;
+            }
+            // reset the timeout time and start motion.
+
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+
+            while (opModeIsActive() &&
+                    (isBusy(backRight, newRightTarget, dir) && isBusy(backLeft, newLeftTarget, !dir) && isBusy(frontRight, newRightTarget, dir) && isBusy(frontLeft, newLeftTarget, !dir))) {
+
+                // Display it for the driver.
+                telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
+                telemetry.addData("Currently at",  " at %7d :%7d",
+                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
+                telemetry.addData("Back Currently at",  " at %7d :%7d",
+
+                        backLeft.getCurrentPosition(), backRight.getCurrentPosition());
+                telemetry.addData("Inverse Current Position", frontLeft.getCurrentPosition() * -1);
+
+                telemetry.addData("Correction Value:", correction);
+                telemetry.update();
+
+            }
+
+            // Stop all motion;
+            frontLeft.setPower(0);
+            frontRight.setPower(0);
+            backLeft.setPower(0);
+            backRight.setPower(0);
+
+            // Turn off RUN_TO_POSITION
+
+            sleep(250);   // optional pause after each move.
+        }
+
+    }
     /**Takes the robot from the starting position on the right side and drives it to the high junction, turns, scores, turns back, drives back to the
      * 1st tile of the second parking zone
      */

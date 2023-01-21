@@ -25,12 +25,11 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
     protected DcMotorSimple flapper;
     protected NormalizedColorSensor color;
     final boolean autoSlides = true;
-    public  enum DRIVE_STATE{
-        VIHAS_DRIVE_TANK,
-        VIHAS_DRIVE_STRAFE,
-        FIELD_CENTRIC,
-        ROBOT_CENTRIC,
-
+    public enum DRIVE_STATE{
+        DRIVE_TANK,
+        DRIVE_STRAFE,
+//        FIELD_CENTRIC,
+//        ROBOT_CENTRIC,
     }
     //Between field centric, straightforward and my weird version
     double leftTgtPower = 0, rightTgtPower = 0;
@@ -51,7 +50,7 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
     final double flapUp = .379;
     final double flapDown = .77;
 
-    public static DRIVE_STATE command = DRIVE_STATE.VIHAS_DRIVE_TANK;
+    public static DRIVE_STATE command = DRIVE_STATE.DRIVE_TANK;
     public MecanumPowerPlayTeleOp() throws Exception
     {
         Logging.setup();
@@ -102,39 +101,47 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
             @Override
             public void loop() {
                 switch (command){
-                    case ROBOT_CENTRIC:
-                        //The loop method should contain loop code
-                        //Function of Game Controller 1
-                        y = -gamepad1.left_stick_y; // Remember, this is reversed!
-                        x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
-                        rx = gamepad1.right_stick_x;
-                        y2 = -gamepad2.left_stick_y;
+//                    case ROBOT_CENTRIC:
+//                        //The loop method should contain loop code
+//                        //Function of Game Controller 1
+//                        y = -gamepad1.left_stick_y; // Remember, this is reversed!
+//                        x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+//                        rx = gamepad1.right_stick_x;
+//                        y2 = -gamepad2.left_stick_y;
+//
+//
+//
+//
+//                        // Denominator is the largest motor power (absolute value) or 1
+//                        // This ensures all the powers maintain the same ratio, but only when
+//                        // at least one is out of the range [-1, 1]
+//                        denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+//                        frontLeftPower = (y + x + rx) / denominator;
+//                        backLeftPower = (y - x + rx) / denominator;
+//                        frontRightPower = (y - x - rx) / denominator;
+//                        backRightPower = (y + x - rx) / denominator;
+//                        frontLeft.setPower(frontLeftPower);
+//                        backLeft.setPower(backLeftPower);
+//                        frontRight.setPower(frontRightPower);
+//                        backRight.setPower(backRightPower);
+//                        telemetry.addLine("ROBOT CENTRIC DRIVING");
+//                        telemetry.update();
 
 
-
-
-                        // Denominator is the largest motor power (absolute value) or 1
-                        // This ensures all the powers maintain the same ratio, but only when
-                        // at least one is out of the range [-1, 1]
-                        denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-                        frontLeftPower = (y + x + rx) / denominator;
-                        backLeftPower = (y - x + rx) / denominator;
-                        frontRightPower = (y - x - rx) / denominator;
-                        backRightPower = (y + x - rx) / denominator;
-                        frontLeft.setPower(frontLeftPower);
-                        backLeft.setPower(backLeftPower);
-                        frontRight.setPower(frontRightPower);
-                        backRight.setPower(backRightPower);
-
-                    case VIHAS_DRIVE_TANK:
+                    case DRIVE_TANK:
                         double leftPower = -gamepad1.left_stick_y;
                         double rightPower = -gamepad1.right_stick_y;
                         frontLeft.setPower(leftPower);
                         backLeft.setPower(leftPower);
                         frontRight.setPower(rightPower);
                         backRight.setPower(rightPower);
-                        command = DRIVE_STATE.VIHAS_DRIVE_STRAFE;
-                    case VIHAS_DRIVE_STRAFE:
+                        telemetry.addLine("DRIVE_TANK");
+                        telemetry.update();
+                        if(leftPower == 0 && rightPower == 0) {
+                            command = DRIVE_STATE.DRIVE_STRAFE;
+                        }
+
+                    case DRIVE_STRAFE:
                         if (gamepad1.left_trigger != 0){
                             double backPower = -gamepad1.left_trigger;
                             double frontPower = gamepad1.left_trigger;
@@ -142,6 +149,7 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
                             backRight.setPower(backPower);
                             frontRight.setPower(frontPower);
                             backLeft.setPower(frontPower);
+
                         }
                         else if (gamepad1.right_trigger != 0){
                             double frontPower = -gamepad1.right_trigger;
@@ -151,32 +159,38 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
                             frontRight.setPower(frontPower);
                             backLeft.setPower(frontPower);
                         }
-                        command = DRIVE_STATE.VIHAS_DRIVE_TANK;
-                    case FIELD_CENTRIC:
-                        double y = -gamepad1.left_stick_y; // Remember, this is reversed!
-                        double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
-                        double rx = gamepad1.right_stick_x;
-                        double speed_reduction_factor = 1;
-                        // Read inverse IMU heading, as the IMU heading is CW positive
-                        double botHeading = -imu.getAngularOrientation().firstAngle;
+                        else {
+                            command = DRIVE_STATE.DRIVE_TANK;
+                        }
+                        telemetry.addLine("DRIVE_STRAFE");
+                        telemetry.update();
 
-                        double rotX = x * Math.cos(botHeading) - y * Math.sin(botHeading);
-                        double rotY = x * Math.sin(botHeading) + y * Math.cos(botHeading);
-
-                        // Denominator is the largest motor power (absolute value) or 1
-                        // This ensures all the powers maintain the same ratio, but only when
-                        // at least one is out of the range [-1, 1]
-                        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-                        double frontLeftPower = (rotY + rotX + rx) / denominator;
-                        double backLeftPower = (rotY - rotX + rx) / denominator;
-                        double frontRightPower = (rotY - rotX - rx) / denominator;
-                        double backRightPower = (rotY + rotX - rx) / denominator;
-
-                        frontLeft.setPower(frontLeftPower * speed_reduction_factor);
-                        backLeft.setPower(backLeftPower * speed_reduction_factor);
-                        frontRight.setPower(frontRightPower * speed_reduction_factor);
-                        backRight.setPower(backRightPower * speed_reduction_factor);
-
+//                    case FIELD_CENTRIC:
+//                        double y = -gamepad1.left_stick_y; // Remember, this is reversed!
+//                        double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+//                        double rx = gamepad1.right_stick_x;
+//                        double speed_reduction_factor = 1;
+//                        // Read inverse IMU heading, as the IMU heading is CW positive
+//                        double botHeading = -imu.getAngularOrientation().firstAngle;
+//
+//                        double rotX = x * Math.cos(botHeading) - y * Math.sin(botHeading);
+//                        double rotY = x * Math.sin(botHeading) + y * Math.cos(botHeading);
+//
+//                        // Denominator is the largest motor power (absolute value) or 1
+//                        // This ensures all the powers maintain the same ratio, but only when
+//                        // at least one is out of the range [-1, 1]
+//                        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+//                        double frontLeftPower = (rotY + rotX + rx) / denominator;
+//                        double backLeftPower = (rotY - rotX + rx) / denominator;
+//                        double frontRightPower = (rotY - rotX - rx) / denominator;
+//                        double backRightPower = (rotY + rotX - rx) / denominator;
+//
+//                        frontLeft.setPower(frontLeftPower * speed_reduction_factor);
+//                        backLeft.setPower(backLeftPower * speed_reduction_factor);
+//                        frontRight.setPower(frontRightPower * speed_reduction_factor);
+//                        backRight.setPower(backRightPower * speed_reduction_factor);
+//                        telemetry.addLine("FIELD_CENTRIC");
+//                        telemetry.update();
 
                 }
 

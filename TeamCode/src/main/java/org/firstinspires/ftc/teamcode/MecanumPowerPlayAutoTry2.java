@@ -21,7 +21,6 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -31,10 +30,6 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
@@ -43,8 +38,8 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import java.util.ArrayList;
 
 @Disabled
-@Autonomous(name = "Mecanum Power Play Auto", group = "Skystone",preselectTeleOp = "Mecanum Power Play Teleop")
-public class MecanumPowerPlayAuto extends LinearOpMode
+@Autonomous(name = "Mecanum Power Play Auto Try 2", group = "Skystone",preselectTeleOp = "Mecanum Power Play Teleop")
+public class MecanumPowerPlayAutoTry2 extends LinearOpMode
 {
     public static double SLIDE_POWER = .5;
     OpenCvCamera camera;
@@ -117,11 +112,6 @@ public class MecanumPowerPlayAuto extends LinearOpMode
     // forwards and a negative motor power to equal backwards
     DcMotor frontRight, frontLeft, backRight, backLeft, slides;
     DcMotorSimple flapper;
-    BNO055IMU imu;
-    Orientation             lastAngles = new Orientation();
-    double                  globalAngle, power = .5, correction, rotation;
-    PIDController           pidRotate, pidDrive;
-    NormalizedColorSensor color;
 
     //Creates the motor with the given name and direction. Sets correct, modes, and zero power behaviour*/
     public DcMotor initMotor(String motorName, DcMotor.Direction direction){
@@ -158,41 +148,15 @@ public class MecanumPowerPlayAuto extends LinearOpMode
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         slides = hardwareMap.get(DcMotor.class, names.slides);
         slides.setDirection(REVERSE);
-        color = hardwareMap.get(NormalizedColorSensor.class, names.color);
 
 
         //Initializing the IMU and PID
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
-        parameters.mode                = BNO055IMU.SensorMode.IMU;
-        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.loggingEnabled      = false;
 
         // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
         // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
         // and named "imu".
-        imu = hardwareMap.get(BNO055IMU.class, names.imu);
 
-        imu.initialize(parameters);
-
-        pidRotate = new PIDController(0.003,0.000003,0);
-
-        pidDrive = new PIDController(.15,0,0);
-
-        telemetry.addData("Mode", "calibrating...");
-        telemetry.update();
-
-        // make sure the imu gyro is calibrated before continuing.
-        while (!isStopRequested() && !imu.isGyroCalibrated())
-        {
-            sleep(50);
-            idle();
-        }
-
-        telemetry.addData("Mode", "waiting for start");
-        telemetry.addData("imu calib status", imu.getCalibrationStatus().toString());
-        telemetry.update();
 
 //        pidDrive.setSetpoint(0);
 //        pidDrive.setOutputRange(0,power);
@@ -216,7 +180,7 @@ public class MecanumPowerPlayAuto extends LinearOpMode
         encoderIntake(-400, 2);**/
 
       //  encoderIntake(-4000, 1);
-        flapper.setPower(.88);
+
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, names.camera), cameraMonitorViewId);
@@ -339,15 +303,15 @@ public class MecanumPowerPlayAuto extends LinearOpMode
         {
 //            normalDrive();
             encoderDrive(.3, 24, 24, 2.3);
-            if (TRY_STRAFE_ONE) {
-                strafe(.6, 24, 3, "right");
-            }
-            if(TRY_STRAFE_TWO) {
-                strafe(.6, 24, 3, "left");
-            }
-            if(TURN){
-                turnDegrees(.8,90);
-            }
+//            if (TRY_STRAFE_ONE) {
+//                strafe(.6, 24, 3, "right");
+//            }
+//            if(TRY_STRAFE_TWO) {
+//                strafe(.6, 24, 3, "left");
+//            }
+//            if(TURN){
+//                turnDegrees(.8,90);
+//            }
 
         }
         else
@@ -450,388 +414,29 @@ public class MecanumPowerPlayAuto extends LinearOpMode
         }
     }
 
-    /**PID FUNCTION*/
-    private void resetAngle()
-    {
-        lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
-        globalAngle = 0;
-    }
-
-    /**PID FUNCTION*/
-    private double getAngle()
-    {
-        // We experimentally determined the Z axis is the axis we want to use for heading angle.
-        // We have to process the angle because the imu works in euler angles so the Z axis is
-        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
-        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
-
-        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
-        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
-
-        if (deltaAngle < -180)
-            deltaAngle += 360;
-        else if (deltaAngle > 180)
-            deltaAngle -= 360;
-
-        globalAngle += deltaAngle;
-
-        lastAngles = angles;
-
-        return globalAngle;
-    }
-
-    /**PID FUNCTION*/
-    private double checkDirection()
-    {
-        // The gain value determines how sensitive the correction is to direction changes.
-        // You will have to experiment with your robot to get small smooth direction changes
-        // to stay on a straight line.
-        double correction, angle, gain = .10;
-
-        angle = getAngle();
-
-        if (angle == 0)
-            correction = 0;             // no adjustment.
-        else
-            correction = -angle;        // reverse sign of angle for correction.
-
-        correction = correction * gain;
-
-        return correction;
-    }
-
-    /**Turn at power speed until the PID detects a change by degrees degrees*/
-    private void turnDegrees(double power, int degrees)
-    {
-        double  leftPower, rightPower;
-
-        // restart imu movement tracking.
-        resetAngle();
-
-
-        if (Math.abs(degrees) > 359) degrees = (int) Math.copySign(359,degrees);
-
-
-        // Integrative factor can be approximated by diving P by 100. Then you have to tune
-        // this value until the robot turns, slows down and stops accurately and also does
-        // not take too long to "home" in on the setpoint. Started with 100 but robot did not
-        // slow and overshot the turn. Increasing I slowed the end of the turn and completed
-        // the turn in a timely manner
-
-        // the turn in a timely manner
-        pidRotate.reset();
-        pidRotate.setSetpoint(degrees);
-        pidRotate.setInputRange(0, degrees);
-        pidRotate.setOutputRange(0, power);
-        pidRotate.setTolerance(1);
-        pidRotate.enable();
-
-        // getAngle() returns + when rotating counter clockwise (left) and - when rotating
-        // clockwise (right).
-
-        if (degrees < 0)
-        {   // turn left.
-            leftPower = -power;
-            rightPower = power;
-        }
-        else if (degrees > 0)
-        {   // turn right.
-            leftPower = power;
-            rightPower = -power;
-        }
-        else return;
-
-        // set power to rotate.
-        if (degrees < 0)
-        {
-            // On right turn we have to get off zero first.
-            while (opModeIsActive() && getAngle() == 0)
-            {
-
-                backRight.setPower(-power);
-                frontRight.setPower(-power);
-                frontLeft.setPower(power);
-                backLeft.setPower(power);
-                sleep(100);
-            }
-
-            do
-            {
-                power = pidRotate.performPID(getAngle()); // power will be - on right turn.
-
-                frontRight.setPower(power);
-                backRight.setPower(power);
-                frontLeft.setPower(-power);
-                backLeft.setPower(-power);
-            } while (opModeIsActive() && !pidRotate.onTarget());
-        }
-        else    // left turn.
-            do
-            {
-                power = pidRotate.performPID(getAngle()); // power will be + on left turn.
-
-                frontRight.setPower(power);
-                backRight.setPower(power);
-                frontLeft.setPower(-power);
-                backLeft.setPower(-power);
-            } while (opModeIsActive() && !pidRotate.onTarget());
-
-        // turn the motors off.
-        frontRight.setPower(0);
-        backRight.setPower(0);
-        frontLeft.setPower(0);
-        backLeft.setPower(0);
-
-        rotation = getAngle();
-
-        // wait for rotation to stop.
-        sleep(1000);
-
-        // reset angle tracking on new heading.
-        resetAngle();
-    }
 
     /**Turns on all the motors at speed speed and runs them until one motor reachs its target or timeoutS seconds have passed*/
     public void encoderDrive(double speed,
                              double leftInches, double rightInches,
                              double timeoutS) {
-        int target1, target2;
 
 
         // Ensure that the opmode is still active
 
         if (opModeIsActive()) {
-//            frontLeft.setMode(STOP);
-//            frontRight.setMode(STOP);
-//            backLeft.setMode(STOP);
-//            backRight.setMode(STOP);
-//
-//            frontLeft.setMode(RUN);
-//            frontRight.setMode(RUN);
-//            backLeft.setMode(RUN);
-//            backRight.setMode(RUN);
 
-            // Determine new target position, and pass to motor controller
-//            target1 = frontRight.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);//This is the deadwheel corresponding motor
-//            target2 = backLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);//Double check deadwheel port
-
-
-            // reset the timeout time and start motion.
-
-
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
-//            Boolean mode = mode(frontRight, target1);
-
-
-            runtime.reset();
-//            double frontLeftSpeed = speedConversion(mode, speed);
-//            double frontRightSpeed = speedConversion(mode, speed);
-//            double backLeftSpeed = speedConversion(mode, speed);
-//            double backRightSpeed = speedConversion(mode, speed);
-//            frontLeft.setPower(speedConversion(mode, speed));
-//            frontRight.setPower(speedConversion(mode, speed));
-//            backLeft.setPower(speedConversion(mode, speed));
-//            backRight.setPower(speedConversion(mode, speed));
             frontLeft.setPower(DRIVE_SPEED_FL);
             frontRight.setPower(DRIVE_SPEED_FR);
             backLeft.setPower(DRIVE_SPEED_BL);
             backRight.setPower(DRIVE_SPEED_BR);
             sleep(TIME_MS);
-//            while (opModeIsActive() &&
-//                    isBusy(frontRight, target1, mode)) {
-                ;
-//                correction = pidDrive.performPID(getAngle());
-//                if (!mode) {
-//                    frontLeft.setPower(Math.max(.3, frontLeftSpeed - correction));
-//                    frontRight.setPower(Math.max(.3, frontRightSpeed + correction));
-//                    backLeft.setPower(Math.max(.3, backLeftSpeed - correction));
-//                    backRight.setPower(Math.max(.3, backRightSpeed + correction));
-//                }
-//                else{
-//                    frontLeft.setPower(Math.min(-.3, frontLeftSpeed + correction));
-//                    frontRight.setPower(Math.min(-.3, frontRightSpeed - correction));
-//                    backLeft.setPower(Math.min(-.3, backLeftSpeed + correction));
-//                    backRight.setPower(Math.min(-.3, backRightSpeed - correction));
-//                }
-//
-//                // Display it for the driver.
-//                telemetry.addData("Running to",  " %7d :%7d", target1,  target2);
-//                telemetry.addData("Currently at",  " at %7d :%7d",
-//                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
-//                telemetry.addData("Back Currently at",  " at %7d :%7d",
-//
-//                        backLeft.getCurrentPosition(), backRight.getCurrentPosition());
-//                telemetry.addData("Inverse Current Position", frontLeft.getCurrentPosition() * -1);
-//
-//                telemetry.addData("Correction Value:", correction);
-//                telemetry.update();
-//
-//            }
-
-            // Stop all motion;
             frontLeft.setPower(0);
             frontRight.setPower(0);
             backLeft.setPower(0);
             backRight.setPower(0);
 
-            // Turn off RUN_TO_POSITION
 
             sleep(250);   // optional pause after each move.
-        }
-
-    }
-
-    public void strafe(double speed,
-                             double inches,
-                             double timeoutS, String direction) {
-        int newLeftTarget;
-        int newRightTarget;
-
-
-        // Ensure that the opmode is still active
-
-        if (opModeIsActive()) {
-            frontLeft.setMode(STOP);
-            frontRight.setMode(STOP);
-            backLeft.setMode(STOP);
-            backRight.setMode(STOP);
-
-            frontLeft.setMode(RUN);
-            frontRight.setMode(RUN);
-            backLeft.setMode(RUN);
-            backRight.setMode(RUN);
-
-            Boolean dir;
-
-            // Determine new target position, and pass to motor controller
-            if (direction.indexOf("i") > 0) {
-                newLeftTarget = frontLeft.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
-                newRightTarget = frontRight.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
-                frontRight.setPower(speed);
-                backLeft.setPower(speed);
-                frontLeft.setPower(-speed);
-                backRight.setPower(-speed);
-                dir = true;
-            }
-            else{
-                newLeftTarget = frontLeft.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
-                newRightTarget = frontRight.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
-                frontRight.setPower(-speed);
-                backLeft.setPower(-speed);
-                frontLeft.setPower(speed);
-                backRight.setPower(speed);
-                dir =false;
-            }
-            // reset the timeout time and start motion.
-
-
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
-
-            while (opModeIsActive() &&
-                    (isBusy(backRight, newRightTarget, dir) && isBusy(backLeft, newLeftTarget, !dir) && isBusy(frontRight, newRightTarget, dir) && isBusy(frontLeft, newLeftTarget, !dir))) {
-
-                // Display it for the driver.
-                telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
-                telemetry.addData("Currently at",  " at %7d :%7d",
-                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
-                telemetry.addData("Back Currently at",  " at %7d :%7d",
-
-                        backLeft.getCurrentPosition(), backRight.getCurrentPosition());
-                telemetry.addData("Inverse Current Position", frontLeft.getCurrentPosition() * -1);
-
-                telemetry.addData("Correction Value:", correction);
-                telemetry.update();
-
-            }
-
-            // Stop all motion;
-            frontLeft.setPower(0);
-            frontRight.setPower(0);
-            backLeft.setPower(0);
-            backRight.setPower(0);
-
-            // Turn off RUN_TO_POSITION
-
-            sleep(250);   // optional pause after each move.
-        }
-
-    }
-
-
-    /**Takes the robot from the starting position on the right side and drives it to the high junction, turns, scores, turns back, drives back to the
-     * 1st tile of the second parking zone
-     */
-    public void normalDrive(){
-
-        encoderIntake(36, 1);
-        flapper.setPower(flapUp);
-        encoderIntake(27.3,1);
-        flapper.setPower(flapDown);
-        encoderIntake(46,2);
-        sleep(250);
-//        encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_BEFORE_TURN, INCHES_TO_HIGH_JUNCTION_BEFORE_TURN, 5);
-        sleep(250);
-        encoderIntake(95.5,2);
-        sleep(250);
-        sleep(250);
-        flapper.setPower(flapUp);
-        sleep(250);
-
-
-
-
-
-
-    }
-
-    /** Flaps the flapper (not used in the parking zone code*/
-    public void resetSlides(){
-        flapper.setPower(flapUp);
-        sleep(250);
-//        encoderIntake(0,5);
-        flapper.setPower(flapDown);
-        sleep(250);
-
-//        encoderIntake(3356,5);
-    }
-
-    /** Returns a boolean that depends on the motor.currentPosition() compared to position*/
-    public boolean mode(DcMotor motor, int position){
-        return motor.getCurrentPosition() < position;
-    }
-
-    /** Function that compares the motor position to their targets*/
-    public boolean isBusy(DcMotor motor, int position, boolean mode){
-        int motorPos = motor.getCurrentPosition();
-        Logging.log(motor.getDeviceName() + "'s current target is " + position + "and current position is " + motorPos);
-        if (mode){
-            return motorPos < position;
-        }
-        else{
-            return motorPos > position;
-        }
-
-    }
-
-    /** Returns a the input positive or negative based on the direction the robot needs to move*/
-    public double speedConversion(Boolean mode, double speed){
-        if (mode){
-            return (-speed);
-        }
-        else{
-            return (speed);
         }
 
     }
