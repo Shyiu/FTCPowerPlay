@@ -1,18 +1,19 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.Servo;
-
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 //cd C:\Users\vihas\Android\platform-tools
 //adb.exe
 // adb pull sdcard/Logging.txt c:\temp\robot_Logging.txt
 
 //Above command for Log File
+@Config
 @TeleOp(name = "Mecanum Power Play Teleop", group = "Tele-Op")
 public class MecanumPowerPlayTeleOp extends ThreadOpMode {
     protected DcMotor frontRight;
@@ -22,27 +23,35 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
     protected DcMotor slides;
     protected DcMotor tape;
     protected DcMotorSimple flapper;
-    protected DistanceSensor distance;
+    protected NormalizedColorSensor color;
     final boolean autoSlides = true;
+    public  enum DRIVE_STATE{
+        VIHAS_DRIVE_TANK,
+        VIHAS_DRIVE_STRAFE,
+        FIELD_CENTRIC,
+        ROBOT_CENTRIC,
 
+    }
+    //Between field centric, straightforward and my weird version
     double leftTgtPower = 0, rightTgtPower = 0;
     double y,x,rx,y2;
     double denominator,frontLeftPower,backLeftPower,frontRightPower,backRightPower;
     public PowerplayBot names = new PowerplayBot();
     //60 is encoder position
     //Slide Related Variables
-    final double TOP_HARDSTOP = 93.5;
-    final double BOTTOM_HARDSTOP = 27.8;//Actually supposed to be 0
+    double TOP_HARDSTOP = 6933;
+    double BOTTOM_HARDSTOP = -870;//Actually supposed to be 0
     final int STARTING_POS = 719;
-    final double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 41, 66, TOP_HARDSTOP};
+    double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 2646, 4984, TOP_HARDSTOP};
     int slideIndex = 0;
     double slidesPosition = 0;
     final double SLIDE_POWER = .9;
-
+    boolean toggleHardstops = false;
     //Flap related Variables
     final double flapUp = .379;
     final double flapDown = .77;
 
+    public static DRIVE_STATE command = DRIVE_STATE.VIHAS_DRIVE_TANK;
     public MecanumPowerPlayTeleOp() throws Exception
     {
         Logging.setup();
@@ -50,19 +59,25 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
     }
     @Override
     public void mainInit() {
+        BNO055IMU imu = hardwareMap.get(BNO055IMU.class, names.imu);
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        // Technically this is the default, however specifying it is clearer
+        parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
+        // Without this, data retrieving from the IMU throws an exception
+        imu.initialize(parameters);
+
         slides = hardwareMap.get(DcMotor.class, names.slides);
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
-        distance = hardwareMap.get(DistanceSensor.class, names.distance);
-        tape = hardwareMap.get(DcMotor.class, names.tape);
 
-        tape.setDirection(DcMotor.Direction.REVERSE);
         slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        color = hardwareMap.get(NormalizedColorSensor.class, names.color);
 
 
-        slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        telemetry.addData("Slide position", distance.getDistance(DistanceUnit.CM));
+        slides.setDirection(DcMotor.Direction.REVERSE);
+
 
 
         // Pulls the motors from the robot configuration so that they can be manipulated
@@ -74,8 +89,8 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
 
         // Reverses the direction of the left motors, to allow a positive motor power to equal
         // forwards and a negative motor power to equal backwards
-        frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backLeft.setDirection(DcMotor.Direction.REVERSE);
+        frontRight.setDirection(DcMotor.Direction.REVERSE);
+        backRight.setDirection(DcMotor.Direction.REVERSE);
 
 
         // Makes the Driver Hub output the message "Status: Initialized"
@@ -86,34 +101,90 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
         registerThread(new TaskThread(new TaskThread.Actions() {
             @Override
             public void loop() {
-                //The loop method should contain loop code
-                //Function of Game Controller 1
-                y = -gamepad1.left_stick_y; // Remember, this is reversed!
-                x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
-                rx = gamepad1.right_stick_x;
-                y2 = -gamepad2.left_stick_y;
-                Servo.Direction direction = Servo.Direction.FORWARD;
+                switch (command){
+                    case ROBOT_CENTRIC:
+                        //The loop method should contain loop code
+                        //Function of Game Controller 1
+                        y = -gamepad1.left_stick_y; // Remember, this is reversed!
+                        x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+                        rx = gamepad1.right_stick_x;
+                        y2 = -gamepad2.left_stick_y;
+
+
+
+
+                        // Denominator is the largest motor power (absolute value) or 1
+                        // This ensures all the powers maintain the same ratio, but only when
+                        // at least one is out of the range [-1, 1]
+                        denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+                        frontLeftPower = (y + x + rx) / denominator;
+                        backLeftPower = (y - x + rx) / denominator;
+                        frontRightPower = (y - x - rx) / denominator;
+                        backRightPower = (y + x - rx) / denominator;
+                        frontLeft.setPower(frontLeftPower);
+                        backLeft.setPower(backLeftPower);
+                        frontRight.setPower(frontRightPower);
+                        backRight.setPower(backRightPower);
+
+                    case VIHAS_DRIVE_TANK:
+                        double leftPower = -gamepad1.left_stick_y;
+                        double rightPower = -gamepad1.right_stick_y;
+                        frontLeft.setPower(leftPower);
+                        backLeft.setPower(leftPower);
+                        frontRight.setPower(rightPower);
+                        backRight.setPower(rightPower);
+                        command = DRIVE_STATE.VIHAS_DRIVE_STRAFE;
+                    case VIHAS_DRIVE_STRAFE:
+                        if (gamepad1.left_trigger != 0){
+                            double backPower = -gamepad1.left_trigger;
+                            double frontPower = gamepad1.left_trigger;
+                            frontLeft.setPower(backPower);
+                            backRight.setPower(backPower);
+                            frontRight.setPower(frontPower);
+                            backLeft.setPower(frontPower);
+                        }
+                        else if (gamepad1.right_trigger != 0){
+                            double frontPower = -gamepad1.right_trigger;
+                            double backPower = gamepad1.right_trigger;
+                            frontLeft.setPower(backPower);
+                            backRight.setPower(backPower);
+                            frontRight.setPower(frontPower);
+                            backLeft.setPower(frontPower);
+                        }
+                        command = DRIVE_STATE.VIHAS_DRIVE_TANK;
+                    case FIELD_CENTRIC:
+                        double y = -gamepad1.left_stick_y; // Remember, this is reversed!
+                        double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+                        double rx = gamepad1.right_stick_x;
+                        double speed_reduction_factor = 1;
+                        // Read inverse IMU heading, as the IMU heading is CW positive
+                        double botHeading = -imu.getAngularOrientation().firstAngle;
+
+                        double rotX = x * Math.cos(botHeading) - y * Math.sin(botHeading);
+                        double rotY = x * Math.sin(botHeading) + y * Math.cos(botHeading);
+
+                        // Denominator is the largest motor power (absolute value) or 1
+                        // This ensures all the powers maintain the same ratio, but only when
+                        // at least one is out of the range [-1, 1]
+                        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+                        double frontLeftPower = (rotY + rotX + rx) / denominator;
+                        double backLeftPower = (rotY - rotX + rx) / denominator;
+                        double frontRightPower = (rotY - rotX - rx) / denominator;
+                        double backRightPower = (rotY + rotX - rx) / denominator;
+
+                        frontLeft.setPower(frontLeftPower * speed_reduction_factor);
+                        backLeft.setPower(backLeftPower * speed_reduction_factor);
+                        frontRight.setPower(frontRightPower * speed_reduction_factor);
+                        backRight.setPower(backRightPower * speed_reduction_factor);
+
+
+                }
 
 
 
 
 
-                // Denominator is the largest motor power (absolute value) or 1
-                // This ensures all the powers maintain the same ratio, but only when
-                // at least one is out of the range [-1, 1]
-                denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-                frontLeftPower = (y + x + rx) / denominator;
-                backLeftPower = (y - x + rx) / denominator;
-                frontRightPower = (y - x - rx) / denominator;
-                backRightPower = (y + x - rx) / denominator;
 
-
-
-
-                frontLeft.setPower(frontLeftPower);
-                backLeft.setPower(backLeftPower);
-                frontRight.setPower(frontRightPower);
-                backRight.setPower(backRightPower);
 
 
                 // Makes the Driver Hub output the message
@@ -129,22 +200,22 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
             @Override
             public void loop() {
                 double slidePower = -gamepad2.left_stick_y;
-                double tapePower = gamepad2.left_trigger;
 
-                double distanceCM = distance.getDistance(DistanceUnit.CM);
-                if (distanceCM > BOTTOM_HARDSTOP && distanceCM < TOP_HARDSTOP) {
+                if (slides.getCurrentPosition() > BOTTOM_HARDSTOP && slides.getCurrentPosition() < TOP_HARDSTOP) {
                     slides.setPower(slidePower);
                 }
-                else if (distanceCM <= BOTTOM_HARDSTOP && slidePower > 0) {
+                else if(toggleHardstops){
                     slides.setPower(slidePower);
                 }
-                else if (distanceCM >= TOP_HARDSTOP && slidePower < 0) {
+                else if (slides.getCurrentPosition() <= BOTTOM_HARDSTOP && slidePower > 0) {
+                    slides.setPower(slidePower);
+                }
+                else if (slides.getCurrentPosition() >= TOP_HARDSTOP && slidePower < 0) {
                     slides.setPower(slidePower);
                 }
                 else
                     slides.setPower(0);
 
-                tape.setPower(tapePower);
 
                 if (gamepad2.dpad_up){
                     if (slideIndex < SLIDE_POSITIONS.length - 1){
@@ -166,6 +237,41 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
                     slideIndex = SLIDE_POSITIONS.length - 1;
                     moveSlides(SLIDE_POSITIONS[slideIndex]);
                 }
+                if(gamepad2.b){
+                    if (toggleHardstops){
+                        if (slideIndex == 0){
+                            double difference = slides.getCurrentPosition() - BOTTOM_HARDSTOP;
+                            BOTTOM_HARDSTOP = slides.getCurrentPosition();
+                            SLIDE_POSITIONS[0] = BOTTOM_HARDSTOP;
+                            SLIDE_POSITIONS[1] += difference;
+                            SLIDE_POSITIONS[2] += difference;
+
+                        }
+                        else if (slideIndex == SLIDE_POSITIONS.length - 1){
+                            double difference = TOP_HARDSTOP - slides.getCurrentPosition();
+                            TOP_HARDSTOP = slides.getCurrentPosition();
+                            SLIDE_POSITIONS[SLIDE_POSITIONS.length - 1] = TOP_HARDSTOP;
+                            SLIDE_POSITIONS[1] -= difference;
+                            SLIDE_POSITIONS[2] -= difference;
+                        }
+                        toggleHardstops = false;
+                        while(gamepad2.b){
+                            telemetry.addLine("Waiting for User to Release B");
+                            telemetry.update();
+                        }
+                        telemetry.clear();
+                        telemetry.update();
+                    }
+                    else{
+                        toggleHardstops = true;
+                        while(gamepad2.b){
+                            telemetry.addLine("waiting for User to Release B");
+                            telemetry.update();
+                        }
+                        telemetry.clear();
+                        telemetry.update();
+                    }
+                }
                 if(gamepad2.x){
                     flapper.setPower(closerToV2(flapUp, flapper.getPower(), flapDown));
                     while(gamepad2.x){
@@ -181,19 +287,27 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
     }
     public void moveSlides(double target){
         double currentTime = getRuntime();
+
         if(autoSlides) {
-            if (distance.getDistance(DistanceUnit.CM) > target) {
+            if (slides.getCurrentPosition() > target) {
                 slides.setPower(-SLIDE_POWER);
-                while (distance.getDistance(DistanceUnit.CM) > target && getRuntime() - currentTime < 5) {
-                    telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
+
+                while (slides.getCurrentPosition() > target && getRuntime() - currentTime < 5) {
+                    if (getBatteryVoltage() < 10.0){
+                        break;
+                    }
+                    telemetry.addData("Slide Position", slides.getCurrentPosition());
                     telemetry.addData("Target Position", target);
                     telemetry.update();
                 }
                 slides.setPower(0);
-            } else if (distance.getDistance(DistanceUnit.CM) < target) {
+            } else if (slides.getCurrentPosition() < target) {
                 slides.setPower(SLIDE_POWER);
-                while (distance.getDistance(DistanceUnit.CM) < target && getRuntime() - currentTime < 5) {
-                    telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
+                while (slides.getCurrentPosition() < target && getRuntime() - currentTime < 5) {
+                    if (getBatteryVoltage() < 10.0){
+                        break;
+                    }
+                    telemetry.addData("Slide Position", slides.getCurrentPosition());
                     telemetry.addData("Target Position", target);
                     telemetry.update();
                 }
@@ -209,7 +323,7 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
         telemetry.addData("Front Left Motor Power", frontLeft.getPower());
         telemetry.addData("Back Right Motor Power", backRight.getPower());
         telemetry.addData("Back Left Motor Power", backLeft.getPower());
-        telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
+        telemetry.addData("Slide Position", slides.getCurrentPosition());
 
 
 
@@ -226,5 +340,15 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
             return v1;
         }
         return v3;
+    }
+    double getBatteryVoltage() {
+        double result = Double.POSITIVE_INFINITY;
+        for (VoltageSensor sensor : hardwareMap.voltageSensor) {
+            double voltage = sensor.getVoltage();
+            if (voltage > 0) {
+                result = Math.min(result, voltage);
+            }
+        }
+        return result;
     }
 }

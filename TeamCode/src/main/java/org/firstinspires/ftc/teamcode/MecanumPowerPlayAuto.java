@@ -27,15 +27,14 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
@@ -48,13 +47,16 @@ import java.util.ArrayList;
 @Autonomous(name = "Mecanum Power Play Auto", group = "Skystone")
 public class MecanumPowerPlayAuto extends LinearOpMode
 {
-    private static double SLIDE_POWER = .5;
+    public static double SLIDE_POWER = .5;
     OpenCvCamera camera;
     AprilTagPipeline aprilTagDetectionPipeline;
     public static NormalizedColorSensor color_sensor;
     public static int INCHES_TO_HIGH_JUNCTION_BEFORE_TURN = 43;
     public static int DEGREES_TO_HIGH_JUNCTION = 28;
     public static int INCHES_TO_HIGH_JUNCTION_AFTER_TURN = 6;
+    public static boolean TRY_STRAFE_ONE = false;
+    public static boolean TRY_STRAFE_TWO = false;
+    public static boolean TURN = false;
     final int ID_TAG_OF_INTEREST = 0;
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
@@ -83,6 +85,8 @@ public class MecanumPowerPlayAuto extends LinearOpMode
     // This is gearing DOWN for less speed and more torque.
     // For gearing UP, use a gear ratio less than 1.0. Note this will affect the direction of wheel rotation.
     static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
+    static final double     COUNTS_PER_ENCODER_REV = 8192;
+    static final double DEADWHEEL_DIAMETER_INCHES = 1.378;
     //35:45 = 3.72 ft/s 40:40 = 2.88 ft/s 45:35 = 2.26 ft/s  (0.25 initially)
     //we need to figure out exact gear ratio without trial and error
     static final double     DRIVE_GEAR_REDUCTION    = 1;     // No External Gearing.
@@ -90,7 +94,13 @@ public class MecanumPowerPlayAuto extends LinearOpMode
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * Math.PI);
-    static double     DRIVE_SPEED             = 0.5;
+    static final double COUNTS_PER_DEADWHEEL_INCH = (COUNTS_PER_ENCODER_REV * DRIVE_GEAR_REDUCTION) / (DEADWHEEL_DIAMETER_INCHES * Math.PI);
+    public static double     DRIVE_SPEED_FR             = 0.5;
+    public static double     DRIVE_SPEED_FL             = 0.5;
+    public static double     DRIVE_SPEED_BR             = 0.5;
+    public static double     DRIVE_SPEED_BL             = 0.5;
+
+    public static int TIME_MS = 1000;
     static double     TURN_SPEED              = 0.5;
     static final DcMotor.Direction FORWARD = DcMotor.Direction.FORWARD;
     static final DcMotor.Direction REVERSE = DcMotor.Direction.REVERSE;
@@ -100,7 +110,7 @@ public class MecanumPowerPlayAuto extends LinearOpMode
     final double flapUp = .57;
     final double flapDown = .77;
     AprilTagDetection tagOfInterest = null;
-
+    public static int distanceFor360Turn = 1000;
     //Motor Setup
 
 
@@ -108,11 +118,11 @@ public class MecanumPowerPlayAuto extends LinearOpMode
     // forwards and a negative motor power to equal backwards
     DcMotor frontRight, frontLeft, backRight, backLeft, slides;
     DcMotorSimple flapper;
-    DistanceSensor distance;
     BNO055IMU imu;
     Orientation             lastAngles = new Orientation();
     double                  globalAngle, power = .5, correction, rotation;
     PIDController           pidRotate, pidDrive;
+    NormalizedColorSensor color;
 
     //Creates the motor with the given name and direction. Sets correct, modes, and zero power behaviour*/
     public DcMotor initMotor(String motorName, DcMotor.Direction direction){
@@ -142,14 +152,14 @@ public class MecanumPowerPlayAuto extends LinearOpMode
     {
 
         //Initializing the motors
-        frontRight = initMotor(names.fr);
-        frontLeft = initMotor(names.fl, REVERSE);
-        backRight = initMotor(names.br);
-        backLeft = initMotor(names.bl, REVERSE);
-
+        frontRight = initMotor(names.fr, REVERSE);
+        frontLeft = initMotor(names.fl);
+        backRight = initMotor(names.br, REVERSE);
+        backLeft = initMotor(names.bl);
         flapper = hardwareMap.get(DcMotorSimple.class, names.intake);
         slides = hardwareMap.get(DcMotor.class, names.slides);
-        distance = hardwareMap.get(DistanceSensor.class, names.distance);
+        slides.setDirection(REVERSE);
+        color = hardwareMap.get(NormalizedColorSensor.class, names.color);
 
 
         //Initializing the IMU and PID
@@ -189,8 +199,20 @@ public class MecanumPowerPlayAuto extends LinearOpMode
         pidDrive.setOutputRange(0,power);
         pidDrive.setInputRange(-90,90);
         pidDrive.enable();
+        color.setGain((float) 15);
+        slides.setPower(SLIDE_POWER);
+        NormalizedRGBA colors = color.getNormalizedColors();
+        while (colors.green < .45 && colors.red < .45){
 
-        encoderIntake(32, 1);
+            colors = color.getNormalizedColors();
+
+        }
+        slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        slides.setPower(0);
+        encoderIntake(-400, 2);
+
+      //  encoderIntake(-4000, 1);
         flapper.setPower(.88);
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -312,7 +334,17 @@ public class MecanumPowerPlayAuto extends LinearOpMode
 
         if(tagOfInterest == null)
         {
-            normalDrive();
+//            normalDrive();
+            encoderDrive(.3, 24, 24, 2.3);
+            if (TRY_STRAFE_ONE) {
+                strafe(.6, 24, 3, "right");
+            }
+            if(TRY_STRAFE_TWO) {
+                strafe(.6, 24, 3, "left");
+            }
+            if(TURN){
+                turnDegrees(.8,90);
+            }
 
         }
         else
@@ -320,43 +352,43 @@ public class MecanumPowerPlayAuto extends LinearOpMode
 
             if (parking_zone == 2){
 //normalDrive();
-                resetSlides();
-                encoderDrive(DRIVE_SPEED, 31, 31,5);
+//                resetSlides();
+//                encoderDrive(DRIVE_SPEED, 31, 31,5);
 
             }
 
 
             if (parking_zone == 1){
 //                normalDrive();
-                resetSlides();
-                encoderDrive(DRIVE_SPEED, 28, 28,5);
-                flapper.setPower(.3);
-
-                sleep(250);
-                flapper.setPower(flapDown);
-                sleep(250);
-                turnDegrees(TURN_SPEED, 90);
-
-                sleep(250);
-                encoderDrive(DRIVE_SPEED, 15, 15,5);
-                sleep(250);
-                flapper.setPower(flapDown);
+//                resetSlides();
+//                encoderDrive(DRIVE_SPEED, 28, 28,5);
+//                flapper.setPower(.3);
+//
+//                sleep(250);
+//                flapper.setPower(flapDown);
+//                sleep(250);
+//                turnDegrees(TURN_SPEED, 90);
+//
+//                sleep(250);
+//                encoderDrive(DRIVE_SPEED, 15, 15,5);
+//                sleep(250);
+//                flapper.setPower(flapDown);
 
             }
             if (parking_zone == 3){
-                resetSlides();
-                encoderDrive(DRIVE_SPEED, 29, 29,5);
-                flapper.setPower(.3);
-
-                sleep(250);
-                flapper.setPower(flapDown);
-                sleep(250);
-
-                turnDegrees(TURN_SPEED, -85);
-                sleep(250);
-                encoderDrive(DRIVE_SPEED, 18, 18,5);
-                sleep(250);
-                flapper.setPower(flapDown);
+//                resetSlides();
+//                encoderDrive(DRIVE_SPEED, 29, 29,5);
+//                flapper.setPower(.3);
+//
+//                sleep(250);
+//                flapper.setPower(flapDown);
+//                sleep(250);
+//
+//                turnDegrees(TURN_SPEED, -85);
+//                sleep(250);
+//                encoderDrive(DRIVE_SPEED, 18, 18,5);
+//                sleep(250);
+//                flapper.setPower(flapDown);
             }
         }
     }
@@ -391,25 +423,25 @@ public class MecanumPowerPlayAuto extends LinearOpMode
     }
 
     /** Move the slides using SLIDE_POWER until they reach target or timeoutS seconds has passed */
-    public void encoderIntake(double target, double timeoutS){
+    public void encoderIntake(double target, double timeoutS) {
         double currentTime = getRuntime();
-        double slidesPosition = distance.getDistance(DistanceUnit.CM);
+        double slidesPosition = slides.getCurrentPosition();
         if (slidesPosition > target) {
             slides.setPower(-SLIDE_POWER);
-            while (slidesPosition > target && getRuntime() - currentTime < 5) {
-                telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
+            while (slidesPosition > target && getRuntime() - currentTime < timeoutS) {
+                telemetry.addData("Slide Position", slides.getCurrentPosition());
                 telemetry.addData("Target Position", target);
                 telemetry.update();
-                slidesPosition = distance.getDistance(DistanceUnit.CM);
+                slidesPosition = slides.getCurrentPosition();
             }
             slides.setPower(0);
         } else if (slidesPosition < target) {
             slides.setPower(SLIDE_POWER);
-            while (slidesPosition < target && getRuntime() - currentTime < 5) {
-                telemetry.addData("Slide Position", distance.getDistance(DistanceUnit.CM));
+            while (slidesPosition < target && getRuntime() - currentTime < timeoutS) {
+                telemetry.addData("Slide Position", slides.getCurrentPosition());
                 telemetry.addData("Target Position", target);
                 telemetry.update();
-                slidesPosition = distance.getDistance(DistanceUnit.CM);
+                slidesPosition = slides.getCurrentPosition();
             }
             slides.setPower(0);
         }
@@ -562,29 +594,25 @@ public class MecanumPowerPlayAuto extends LinearOpMode
     public void encoderDrive(double speed,
                              double leftInches, double rightInches,
                              double timeoutS) {
-        int newLeftTarget;
-        int newRightTarget;
-        int newBackRightTarget;
-        int newBackLeftTarget;
+        int target1, target2;
+
 
         // Ensure that the opmode is still active
 
         if (opModeIsActive()) {
-            frontLeft.setMode(STOP);
-            frontRight.setMode(STOP);
-            backLeft.setMode(STOP);
-            backRight.setMode(STOP);
-
-            frontLeft.setMode(RUN);
-            frontRight.setMode(RUN);
-            backLeft.setMode(RUN);
-            backRight.setMode(RUN);
+//            frontLeft.setMode(STOP);
+//            frontRight.setMode(STOP);
+//            backLeft.setMode(STOP);
+//            backRight.setMode(STOP);
+//
+//            frontLeft.setMode(RUN);
+//            frontRight.setMode(RUN);
+//            backLeft.setMode(RUN);
+//            backRight.setMode(RUN);
 
             // Determine new target position, and pass to motor controller
-            newLeftTarget = frontLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
-            newRightTarget = frontRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
+//            target1 = frontRight.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);//This is the deadwheel corresponding motor
+//            target2 = backLeft.getCurrentPosition() + (int) (leftInches * COUNTS_PER_INCH);//Double check deadwheel port
 
 
             // reset the timeout time and start motion.
@@ -596,43 +624,53 @@ public class MecanumPowerPlayAuto extends LinearOpMode
             // always end the motion as soon as possible.
             // However, if you require that BOTH motors have finished their moves before the robot continues
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
-            Boolean mode1 = mode(backRight, newBackRightTarget);
-            Boolean mode2 = mode(backLeft, newBackLeftTarget);
-            Boolean mode3 = mode(frontRight, newRightTarget);
-            Boolean mode4 = mode(frontLeft, newLeftTarget);
+//            Boolean mode = mode(frontRight, target1);
+
 
             runtime.reset();
-            double frontLeftSpeed = speedConversion(mode1, speed);
-            double frontRightSpeed = speedConversion(mode2, speed);
-            double backLeftSpeed = speedConversion(mode3, speed);
-            double backRightSpeed = speedConversion(mode4, speed);
-            frontLeft.setPower(speedConversion(mode1, speed));
-            frontRight.setPower(speedConversion(mode2, speed));
-            backLeft.setPower(speedConversion(mode3, speed));
-            backRight.setPower(speedConversion(mode4, speed));
-
-            while (opModeIsActive() &&
-                    (isBusy(backRight, newBackRightTarget, mode1) && isBusy(backLeft, newBackLeftTarget, mode2) && isBusy(frontRight, newRightTarget, mode3) && isBusy(frontLeft, newLeftTarget, mode4))) {
-                correction = pidDrive.performPID(getAngle());
-
-                frontLeft.setPower(Math.max(.3,frontLeftSpeed - correction));
-                frontRight.setPower(Math.max(.3,frontRightSpeed + correction));
-                backLeft.setPower(Math.max(.3,backLeftSpeed - correction));
-                backRight.setPower(Math.max(.3,backRightSpeed + correction));
-
-                // Display it for the driver.
-                telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
-                telemetry.addData("Currently at",  " at %7d :%7d",
-                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
-                telemetry.addData("Back Currently at",  " at %7d :%7d",
-
-                        backLeft.getCurrentPosition(), backRight.getCurrentPosition());
-                telemetry.addData("Inverse Current Position", frontLeft.getCurrentPosition() * -1);
-
-                telemetry.addData("Correction Value:", correction);
-                telemetry.update();
-
-            }
+//            double frontLeftSpeed = speedConversion(mode, speed);
+//            double frontRightSpeed = speedConversion(mode, speed);
+//            double backLeftSpeed = speedConversion(mode, speed);
+//            double backRightSpeed = speedConversion(mode, speed);
+//            frontLeft.setPower(speedConversion(mode, speed));
+//            frontRight.setPower(speedConversion(mode, speed));
+//            backLeft.setPower(speedConversion(mode, speed));
+//            backRight.setPower(speedConversion(mode, speed));
+            frontLeft.setPower(DRIVE_SPEED_FL);
+            frontRight.setPower(DRIVE_SPEED_FR);
+            backLeft.setPower(DRIVE_SPEED_BL);
+            backRight.setPower(DRIVE_SPEED_BR);
+            sleep(TIME_MS);
+//            while (opModeIsActive() &&
+//                    isBusy(frontRight, target1, mode)) {
+                ;
+//                correction = pidDrive.performPID(getAngle());
+//                if (!mode) {
+//                    frontLeft.setPower(Math.max(.3, frontLeftSpeed - correction));
+//                    frontRight.setPower(Math.max(.3, frontRightSpeed + correction));
+//                    backLeft.setPower(Math.max(.3, backLeftSpeed - correction));
+//                    backRight.setPower(Math.max(.3, backRightSpeed + correction));
+//                }
+//                else{
+//                    frontLeft.setPower(Math.min(-.3, frontLeftSpeed + correction));
+//                    frontRight.setPower(Math.min(-.3, frontRightSpeed - correction));
+//                    backLeft.setPower(Math.min(-.3, backLeftSpeed + correction));
+//                    backRight.setPower(Math.min(-.3, backRightSpeed - correction));
+//                }
+//
+//                // Display it for the driver.
+//                telemetry.addData("Running to",  " %7d :%7d", target1,  target2);
+//                telemetry.addData("Currently at",  " at %7d :%7d",
+//                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
+//                telemetry.addData("Back Currently at",  " at %7d :%7d",
+//
+//                        backLeft.getCurrentPosition(), backRight.getCurrentPosition());
+//                telemetry.addData("Inverse Current Position", frontLeft.getCurrentPosition() * -1);
+//
+//                telemetry.addData("Correction Value:", correction);
+//                telemetry.update();
+//
+//            }
 
             // Stop all motion;
             frontLeft.setPower(0);
@@ -647,13 +685,12 @@ public class MecanumPowerPlayAuto extends LinearOpMode
 
     }
 
-    public void strafeRight(double speed,
+    public void strafe(double speed,
                              double inches,
-                             double timeoutS) {
+                             double timeoutS, String direction) {
         int newLeftTarget;
         int newRightTarget;
-        int newBackRightTarget;
-        int newBackLeftTarget;
+
 
         // Ensure that the opmode is still active
 
@@ -668,13 +705,27 @@ public class MecanumPowerPlayAuto extends LinearOpMode
             backLeft.setMode(RUN);
             backRight.setMode(RUN);
 
+            Boolean dir;
+
             // Determine new target position, and pass to motor controller
-            newLeftTarget = frontLeft.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
-            newRightTarget = frontRight.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
-
-
+            if (direction.indexOf("i") > 0) {
+                newLeftTarget = frontLeft.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
+                newRightTarget = frontRight.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
+                frontRight.setPower(speed);
+                backLeft.setPower(speed);
+                frontLeft.setPower(-speed);
+                backRight.setPower(-speed);
+                dir = true;
+            }
+            else{
+                newLeftTarget = frontLeft.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
+                newRightTarget = frontRight.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
+                frontRight.setPower(-speed);
+                backLeft.setPower(-speed);
+                frontLeft.setPower(speed);
+                backRight.setPower(speed);
+                dir =false;
+            }
             // reset the timeout time and start motion.
 
 
@@ -684,29 +735,9 @@ public class MecanumPowerPlayAuto extends LinearOpMode
             // always end the motion as soon as possible.
             // However, if you require that BOTH motors have finished their moves before the robot continues
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
-            Boolean mode1 = mode(backRight, newBackRightTarget);
-            Boolean mode2 = mode(backLeft, newBackLeftTarget);
-            Boolean mode3 = mode(frontRight, newRightTarget);
-            Boolean mode4 = mode(frontLeft, newLeftTarget);
-
-            runtime.reset();
-            double frontLeftSpeed = speedConversion(mode1, speed);
-            double frontRightSpeed = speedConversion(mode2, speed);
-            double backLeftSpeed = speedConversion(mode3, speed);
-            double backRightSpeed = speedConversion(mode4, speed);
-            frontLeft.setPower(speedConversion(mode1, speed));
-            frontRight.setPower(speedConversion(mode2, speed));
-            backLeft.setPower(speedConversion(mode3, speed));
-            backRight.setPower(speedConversion(mode4, speed));
 
             while (opModeIsActive() &&
-                    (isBusy(backRight, newBackRightTarget, mode1) && isBusy(backLeft, newBackLeftTarget, mode2) && isBusy(frontRight, newRightTarget, mode3) && isBusy(frontLeft, newLeftTarget, mode4))) {
-                correction = pidDrive.performPID(getAngle());
-
-                frontLeft.setPower(Math.max(.3,frontLeftSpeed - correction));
-                frontRight.setPower(Math.max(.3,frontRightSpeed + correction));
-                backLeft.setPower(Math.max(.3,backLeftSpeed - correction));
-                backRight.setPower(Math.max(.3,backRightSpeed + correction));
+                    (isBusy(backRight, newRightTarget, dir) && isBusy(backLeft, newLeftTarget, !dir) && isBusy(frontRight, newRightTarget, dir) && isBusy(frontLeft, newLeftTarget, !dir))) {
 
                 // Display it for the driver.
                 telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
@@ -735,93 +766,6 @@ public class MecanumPowerPlayAuto extends LinearOpMode
 
     }
 
-    public void strafeLeft(double speed,
-                            double inches,
-                            double timeoutS) {
-        int newLeftTarget;
-        int newRightTarget;
-        int newBackRightTarget;
-        int newBackLeftTarget;
-
-        // Ensure that the opmode is still active
-
-        if (opModeIsActive()) {
-            frontLeft.setMode(STOP);
-            frontRight.setMode(STOP);
-            backLeft.setMode(STOP);
-            backRight.setMode(STOP);
-
-            frontLeft.setMode(RUN);
-            frontRight.setMode(RUN);
-            backLeft.setMode(RUN);
-            backRight.setMode(RUN);
-
-            // Determine new target position, and pass to motor controller
-            newLeftTarget = frontLeft.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
-            newRightTarget = frontRight.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
-            newBackLeftTarget = backLeft.getCurrentPosition() - (int) (inches * COUNTS_PER_INCH);
-            newBackRightTarget = backRight.getCurrentPosition() + (int) (inches * COUNTS_PER_INCH);
-
-
-            // reset the timeout time and start motion.
-
-
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
-            Boolean mode1 = mode(backRight, newBackRightTarget);
-            Boolean mode2 = mode(backLeft, newBackLeftTarget);
-            Boolean mode3 = mode(frontRight, newRightTarget);
-            Boolean mode4 = mode(frontLeft, newLeftTarget);
-
-            runtime.reset();
-            double frontLeftSpeed = speedConversion(mode1, speed);
-            double frontRightSpeed = speedConversion(mode2, speed);
-            double backLeftSpeed = speedConversion(mode3, speed);
-            double backRightSpeed = speedConversion(mode4, speed);
-            frontLeft.setPower(speedConversion(mode1, speed));
-            frontRight.setPower(speedConversion(mode2, speed));
-            backLeft.setPower(speedConversion(mode3, speed));
-            backRight.setPower(speedConversion(mode4, speed));
-
-            while (opModeIsActive() &&
-                    (isBusy(backRight, newBackRightTarget, mode1) && isBusy(backLeft, newBackLeftTarget, mode2) && isBusy(frontRight, newRightTarget, mode3) && isBusy(frontLeft, newLeftTarget, mode4))) {
-                correction = pidDrive.performPID(getAngle());
-
-                frontLeft.setPower(Math.max(.3,frontLeftSpeed - correction));
-                frontRight.setPower(Math.max(.3,frontRightSpeed + correction));
-                backLeft.setPower(Math.max(.3,backLeftSpeed - correction));
-                backRight.setPower(Math.max(.3,backRightSpeed + correction));
-
-                // Display it for the driver.
-                telemetry.addData("Running to",  " %7d :%7d", newLeftTarget,  newRightTarget);
-                telemetry.addData("Currently at",  " at %7d :%7d",
-                        frontLeft.getCurrentPosition(), frontRight.getCurrentPosition());
-                telemetry.addData("Back Currently at",  " at %7d :%7d",
-
-                        backLeft.getCurrentPosition(), backRight.getCurrentPosition());
-                telemetry.addData("Inverse Current Position", frontLeft.getCurrentPosition() * -1);
-
-                telemetry.addData("Correction Value:", correction);
-                telemetry.update();
-
-            }
-
-            // Stop all motion;
-            frontLeft.setPower(0);
-            frontRight.setPower(0);
-            backLeft.setPower(0);
-            backRight.setPower(0);
-
-            // Turn off RUN_TO_POSITION
-
-            sleep(250);   // optional pause after each move.
-        }
-
-    }
 
     /**Takes the robot from the starting position on the right side and drives it to the high junction, turns, scores, turns back, drives back to the
      * 1st tile of the second parking zone
@@ -834,11 +778,10 @@ public class MecanumPowerPlayAuto extends LinearOpMode
         flapper.setPower(flapDown);
         encoderIntake(46,2);
         sleep(250);
-        encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_BEFORE_TURN, INCHES_TO_HIGH_JUNCTION_BEFORE_TURN, 5);
+//        encoderDrive(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_BEFORE_TURN, INCHES_TO_HIGH_JUNCTION_BEFORE_TURN, 5);
         sleep(250);
         encoderIntake(95.5,2);
         sleep(250);
-        strafeLeft(DRIVE_SPEED, INCHES_TO_HIGH_JUNCTION_AFTER_TURN, 5);
         sleep(250);
         flapper.setPower(flapUp);
         sleep(250);
@@ -863,12 +806,12 @@ public class MecanumPowerPlayAuto extends LinearOpMode
 
     /** Returns a boolean that depends on the motor.currentPosition() compared to position*/
     public boolean mode(DcMotor motor, int position){
-        return -motor.getCurrentPosition() < position;
+        return motor.getCurrentPosition() < position;
     }
 
     /** Function that compares the motor position to their targets*/
     public boolean isBusy(DcMotor motor, int position, boolean mode){
-        int motorPos = -motor.getCurrentPosition();
+        int motorPos = motor.getCurrentPosition();
         Logging.log(motor.getDeviceName() + "'s current target is " + position + "and current position is " + motorPos);
         if (mode){
             return motorPos < position;
@@ -882,10 +825,10 @@ public class MecanumPowerPlayAuto extends LinearOpMode
     /** Returns a the input positive or negative based on the direction the robot needs to move*/
     public double speedConversion(Boolean mode, double speed){
         if (mode){
-            return (speed);
+            return (-speed);
         }
         else{
-            return (-speed);
+            return (speed);
         }
 
     }

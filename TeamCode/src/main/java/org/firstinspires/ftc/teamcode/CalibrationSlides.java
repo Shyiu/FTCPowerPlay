@@ -23,6 +23,7 @@ public class CalibrationSlides extends LinearOpMode {
         testingMotor = hardwareMap.get(DcMotor.class, "slides");//change name to servo that is being tested.
         testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        testingMotor.setDirection(DcMotor.Direction.REVERSE);
         testingMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         color = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
         telemetry.addLine(testingMotor.getCurrentPosition() + "");
@@ -34,7 +35,7 @@ public class CalibrationSlides extends LinearOpMode {
             if (gamepad1.y){
                 color.setGain((float) GAIN);
                 colors = color.getNormalizedColors();
-                while (colors.green < .52 && colors.red < .52){
+                while (colors.green < .45 && colors.red < .45){
                     testingMotor.setPower(.3);
                     colors = color.getNormalizedColors();
                 }
@@ -59,10 +60,21 @@ public class CalibrationSlides extends LinearOpMode {
                 testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             }
+            if(gamepad1.x || gamepad2.x){
+                color.setGain((float) GAIN);
+                colors = color.getNormalizedColors();
+                while (colors.green < .45 && colors.red < .45){
+                    testingMotor.setPower(-.3);
+                    colors = color.getNormalizedColors();
+                }
+                testingMotor.setPower(-.5);
+                sleep(500);
+                testingMotor.setPower(0);
+            }
             testingMotor.setPower(power);
             colors = color.getNormalizedColors();
             color.setGain((float)GAIN);
-            telemetry.addLine("Gamepad1 Controls:\nLeft Stick Y Moves Motor");
+            telemetry.addLine("Gamepad (1 or 2) Controls:\nLeft Stick Y Moves Motor\na resets the encoder position\ny brings the slides up to the color sensor\n x brings the slides down to be below color sensor");
             telemetry.addData("Color Blue", colors.blue);
             telemetry.addData("Color Red", colors.red);
             telemetry.addData("Color Green", colors.green);
