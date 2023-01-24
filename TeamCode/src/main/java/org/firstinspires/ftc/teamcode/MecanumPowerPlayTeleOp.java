@@ -75,7 +75,6 @@ public class MecanumPowerPlayTeleOp extends ThreadOpMode {
 
 
         slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        slides.setDirection(DcMotor.Direction.REVERSE);
 
 
 
