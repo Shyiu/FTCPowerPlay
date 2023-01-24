@@ -23,7 +23,7 @@ public class CalibrationSlides extends LinearOpMode {
         testingMotor = hardwareMap.get(DcMotor.class, "slides");//change name to servo that is being tested.
         testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        testingMotor.setDirection(DcMotor.Direction.REVERSE);
+        testingMotor.setDirection(DcMotor.Direction.FORWARD);
         testingMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         color = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
         telemetry.addLine(testingMotor.getCurrentPosition() + "");
@@ -35,7 +35,7 @@ public class CalibrationSlides extends LinearOpMode {
             if (gamepad1.y){
                 color.setGain((float) GAIN);
                 colors = color.getNormalizedColors();
-                while (colors.green < .45 && colors.red < .45){
+                while (colors.green < .42 && colors.red < .42){
                     testingMotor.setPower(.3);
                     colors = color.getNormalizedColors();
                 }
@@ -63,13 +63,16 @@ public class CalibrationSlides extends LinearOpMode {
             if(gamepad1.x || gamepad2.x){
                 color.setGain((float) GAIN);
                 colors = color.getNormalizedColors();
-                while (colors.green < .45 && colors.red < .45){
+                while (colors.green < .42 && colors.red < .42){
                     testingMotor.setPower(-.3);
                     colors = color.getNormalizedColors();
                 }
                 testingMotor.setPower(-.5);
                 sleep(500);
                 testingMotor.setPower(0);
+            }
+            if(gamepad1.b){
+                encoderIntake(-400,4);
             }
             testingMotor.setPower(power);
             colors = color.getNormalizedColors();
@@ -85,55 +88,24 @@ public class CalibrationSlides extends LinearOpMode {
 //            testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 //            testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
+
     }
 
-    public void encoderDrive(int ticks) {
-        int newLeftTarget;
-
-
-        // Ensure that the opmode is still active
-        if (opModeIsActive()) {
-
-            // Determine new target position, and pass to motor controller
-            newLeftTarget = ticks;
-
-
-            testingMotor.setTargetPosition(newLeftTarget);
-
-
-            // Turn On RUN_TO_POSITION
-            testingMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-
-            // reset the timeout time and start motion.
-            runtime.reset();
+    public void encoderIntake(double target, double timeoutS) {
+        double currentTime = System.currentTimeMillis();
+        double slidesPosition = testingMotor.getCurrentPosition();
+        if (slidesPosition > target) {
             testingMotor.setPower(-.5);
-
-
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
-            // its target position, the motion will stop.  This is "safer" in the event that the robot will
-            // always end the motion as soon as possible.
-            // However, if you require that BOTH motors have finished their moves before the robot continues
-            // onto the next step, use (isBusy() || isBusy()) in the loop test.
-            while (opModeIsActive() &&
-                    (runtime.seconds() < 5) &&
-                    (testingMotor.isBusy())) {
-
-                // Display it for the driver.
-                telemetry.addData("Running to", " %7d", newLeftTarget);
-                telemetry.addData("Currently at", " at %7d",
-                        testingMotor.getCurrentPosition());
-                telemetry.update();
+            while (slidesPosition > target && System.currentTimeMillis() - currentTime < timeoutS * 1000) {
+                slidesPosition = testingMotor.getCurrentPosition();
             }
-
-            // Stop all motion;
             testingMotor.setPower(0);
-
-            // Turn off RUN_TO_POSITION
-            testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-            sleep(250);   // optional pause after each move.
+        } else if (slidesPosition < target) {
+            testingMotor.setPower(.5);
+            while (slidesPosition < target && System.currentTimeMillis() - currentTime < timeoutS * 1000) {
+                slidesPosition = testingMotor.getCurrentPosition();
+            }
+            testingMotor.setPower(0);
         }
     }
 }
