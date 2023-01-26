@@ -5,16 +5,10 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
-import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.AprilTagPipeline;
-import org.firstinspires.ftc.teamcode.MecanumBot;
 import org.firstinspires.ftc.teamcode.PowerplayBot;
 import org.firstinspires.ftc.teamcode.drive.MecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
@@ -72,7 +66,7 @@ public class MecanumRoadRunnerAuto extends LinearOpMode {
     AprilTagDetection tagOfInterest = null;
     @Override
     public void runOpMode() throws InterruptedException{
-        Lift slides = new Lift(hardwareMap);
+        Lift slides = new Lift(hardwareMap,0,0,0);
         MecanumDrive drive = new MecanumDrive(hardwareMap);
         Intake flapper = new Intake(hardwareMap);
         Pose2d startPose = new Pose2d(0, 0, Math.toRadians(90));
@@ -216,78 +210,3 @@ public class MecanumRoadRunnerAuto extends LinearOpMode {
     }
 
 
-class Intake{
-    MecanumBot m = new MecanumBot();
-    DcMotorSimple flapper;
-    public Intake(HardwareMap hardwareMap){
-        flapper = hardwareMap.get(DcMotorSimple.class, m.intake);
-    }
-    public void move(double position){
-        flapper.setPower(position);
-    }
-}
-class Lift {
-    MecanumBot m = new MecanumBot();
-    DcMotor slides;
-    NormalizedColorSensor color;
-    double targetPos;
-    public Lift(HardwareMap hardwareMap) {
-        slides = hardwareMap.get(DcMotor.class, m.slides);
-        color = hardwareMap.get(NormalizedColorSensor.class, m.color);
-
-
-    }
-    public boolean isBusy(){
-        return slides.getPower() != 0;
-    }
-    public void init(){
-        color.setGain((float) 15);
-        slides.setPower(.7);
-        NormalizedRGBA colors = color.getNormalizedColors();
-        while (colors.green < .42 && colors.red < .42){
-
-            colors = color.getNormalizedColors();
-
-        }
-        slides.setPower(0);
-        slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        control(-650, 2,.7);
-    }
-    public void reset(){
-        color.setGain((float) 15);
-        slides.setPower(-.7);
-        NormalizedRGBA colors = color.getNormalizedColors();
-        while (colors.green < .42 && colors.red < .42){
-
-            colors = color.getNormalizedColors();
-
-        }
-        slides.setPower(0);
-        slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    }
-    public void control(double target, double timeoutS, double SLIDE_POWER) {
-        double currentTime = System.currentTimeMillis();
-        double slidesPosition = slides.getCurrentPosition();
-        if (slidesPosition > target) {
-            slides.setPower(-SLIDE_POWER);
-            while (slidesPosition > target && System.currentTimeMillis() - currentTime < timeoutS * 1000) {
-                slidesPosition = slides.getCurrentPosition();
-            }
-            slides.setPower(0);
-        } else if (slidesPosition < target) {
-            slides.setPower(SLIDE_POWER);
-            while (slidesPosition < target && System.currentTimeMillis() - currentTime < timeoutS * 1000) {
-                slidesPosition = slides.getCurrentPosition();
-            }
-            slides.setPower(0);
-        }
-    }
-    public void move(double target){
-        targetPos = target;
-    }
-    public void update() {
-        control(targetPos, 6,1);
-    }
-}
