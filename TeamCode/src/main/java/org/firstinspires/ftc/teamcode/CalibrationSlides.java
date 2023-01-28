@@ -15,6 +15,13 @@ public class CalibrationSlides extends LinearOpMode {
     NormalizedColorSensor color;
     public static double GAIN = 15;
     //1540 1008 86
+    enum SLIDE_STATE {
+            IDLE,
+            GOING_UP,
+            GOING_DOWN
+    }
+    SLIDE_STATE slideState = SLIDE_STATE.IDLE;
+
     private ElapsedTime runtime = new ElapsedTime();
     public int positions[] = {-5107, -1520, 644, 2800};
 
@@ -32,48 +39,70 @@ public class CalibrationSlides extends LinearOpMode {
         waitForStart();
         double power = 0;
         while (opModeIsActive() && !isStopRequested()) {
-            if (gamepad1.y){
-                color.setGain((float) GAIN);
-                colors = color.getNormalizedColors();
-                while (colors.green < .37 && colors.red < .37){
-                    testingMotor.setPower(.3);
+            switch (slideState){
+                case IDLE:
+                    if (Math.abs(gamepad1.left_stick_y) > 0){
+                        power = -gamepad1.left_stick_y/3.0;
+                    }
+                    else if (Math.abs(gamepad2.left_stick_y) > 0){
+                        power = -gamepad2.left_stick_y/3.0;
+                    }
+                    else if(gamepad1.right_bumper || gamepad2.right_bumper){
+                        power = 1;
+                    }
+                    else if(gamepad1.left_bumper || gamepad2.left_bumper){
+                        power = -1;
+                    }
+                    else{
+                        power = 0;
+                    }
+                    if (gamepad1.y || gamepad2.y){
+                        slideState = SLIDE_STATE.GOING_UP;
+                        color.setGain((float) GAIN);
+                        testingMotor.setPower(.3);
+                    }
+                    if (gamepad1.x || gamepad2.x){
+                        slideState = SLIDE_STATE.GOING_DOWN;
+                        color.setGain((float) GAIN);
+                        colors = color.getNormalizedColors();
+                        testingMotor.setPower(-.3);
+
+                    }
+
+                case GOING_UP:
+
                     colors = color.getNormalizedColors();
-                }
+                    if (colors.green > .37 && colors.red > .37){
+                        slideState = SLIDE_STATE.IDLE;
+                        testingMotor.setPower(0);
+                    }
+                    if (gamepad1.b || gamepad2.b){
+                        slideState = SLIDE_STATE.IDLE;
+                        testingMotor.setPower(0);
+                    }
+                case GOING_DOWN:
+
+                    colors = color.getNormalizedColors();
+                    if (colors.green > .37 && colors.red > .37){
+                        colors = color.getNormalizedColors();
+                        testingMotor.setPower(-.5);
+                        sleep(500);
+                        testingMotor.setPower(0);
+                    }
+                    if (gamepad1.b || gamepad2.b){
+                        slideState = SLIDE_STATE.IDLE;
+                        testingMotor.setPower(0);
+                    }
             }
+
             telemetry.addLine(testingMotor.getCurrentPosition() + "");
-            if (Math.abs(gamepad1.left_stick_y) > 0){
-                power = -gamepad1.left_stick_y/3.0;
-            }
-            else if (Math.abs(gamepad2.left_stick_y) > 0){
-                power = -gamepad2.left_stick_y/3.0;
-            }
-            else if(gamepad1.right_bumper || gamepad2.right_bumper){
-                power = 1;
-            }
-            else if(gamepad1.left_bumper || gamepad2.left_bumper){
-                power = -1;
-            }
-            else{
-                power = 0;
-            }
+
             if(gamepad1.a || gamepad2.a){
                 testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             }
-            if(gamepad1.x || gamepad2.x){
-                color.setGain((float) GAIN);
-                colors = color.getNormalizedColors();
-                while (colors.green < .42 && colors.red < .42){
-                    testingMotor.setPower(-.3);
-                    colors = color.getNormalizedColors();
-                }
-                testingMotor.setPower(-.5);
-                sleep(500);
-                testingMotor.setPower(0);
-            }
-            if(gamepad1.b){
-                encoderIntake(-400,4);
-            }
+
+
             testingMotor.setPower(power);
             colors = color.getNormalizedColors();
             color.setGain((float)GAIN);
