@@ -35,7 +35,7 @@ public class CalibrationSlides extends LinearOpMode {
             if (gamepad1.y){
                 color.setGain((float) GAIN);
                 colors = color.getNormalizedColors();
-                while (colors.green < .42 && colors.red < .42){
+                while (colors.green < .37 && colors.red < .37){
                     testingMotor.setPower(.3);
                     colors = color.getNormalizedColors();
                 }

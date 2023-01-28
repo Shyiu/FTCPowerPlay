@@ -62,7 +62,7 @@ class Lift {
         color.setGain((float) 15);
         slides.setPower(-.7);
         NormalizedRGBA colors = color.getNormalizedColors();
-        while (colors.green < .42 && colors.red < .42) {
+        while (colors.green < .37 && colors.red < .37) {
 
             colors = color.getNormalizedColors();
 
