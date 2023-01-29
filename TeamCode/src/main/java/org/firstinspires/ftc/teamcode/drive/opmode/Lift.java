@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.MecanumBot;
 
-class Lift {
+public class Lift {
     MecanumBot m = new MecanumBot();
     DcMotor slides;
     NormalizedColorSensor color;
@@ -19,6 +19,7 @@ class Lift {
     public Lift(HardwareMap hardwareMap, double P, double I, double D) {
         slides = hardwareMap.get(DcMotor.class, m.slides);
         color = hardwareMap.get(NormalizedColorSensor.class, m.color);
+        slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         this.P = P;
         this.I = I;
         this.D = D;
@@ -71,7 +72,12 @@ class Lift {
         slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
-
+    public void setPower(double power){
+        slides.setPower(power);
+    }
+    public int getCurrentPosition(){
+        return slides.getCurrentPosition();
+    }
     public void control(double target, double timeoutS, double SLIDE_POWER) {
         double currentTime = System.currentTimeMillis();
         double slidesPosition = slides.getCurrentPosition();

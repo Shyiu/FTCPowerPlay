@@ -81,29 +81,38 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
         Lift slides = new Lift(hardwareMap, P, I, D);
         MecanumDrive drive = new MecanumDrive(hardwareMap);
         Intake flapper = new Intake(hardwareMap);
-        Pose2d startPose = new Pose2d(0, 0, Math.toRadians(90));
+        Pose2d startPose = new Pose2d(33, -62, Math.toRadians(90));
 
         drive.setPoseEstimate(startPose);
         TrajectorySequence firstDrive = drive.trajectorySequenceBuilder(startPose)
                 .strafeLeft(15)
-                .lineToLinearHeading(new Pose2d(-21.5, 28, Math.toRadians(121.25)))
+                .lineToLinearHeading(new Pose2d(11.5, -34.2, Math.toRadians(121.25)))
                 .build();
 
         Trajectory toJunction = drive.trajectoryBuilder(firstDrive.end())
                 .forward(5)
                 .build();
-
-
-        Trajectory zone3Strafe = drive.trajectoryBuilder(toJunction.end())
-                .lineToLinearHeading(new Pose2d(zone3X, zone1Y, Math.toRadians(90)))
+        Trajectory toStack = drive.trajectoryBuilder(toJunction.end())
+                .splineToSplineHeading(new Pose2d(57, -12, Math.toRadians(0)), Math.toRadians(-15))
+                .build();
+        Trajectory scoreStack = drive.trajectoryBuilder(toStack.end())
+                .lineToLinearHeading(new Pose2d(33.1, -8.6, Math.toRadians(128)))
+                .build();
+        Trajectory toStackAfter = drive.trajectoryBuilder(scoreStack.end())
+                .lineToLinearHeading(new Pose2d(57, -12, Math.toRadians(0)))
                 .build();
 
-        Trajectory zone1Strafe = drive.trajectoryBuilder(toJunction.end())
-                .lineToLinearHeading(new Pose2d(-zone1X, zone1Y, Math.toRadians(90)))
+
+                Trajectory zone3Strafe = drive.trajectoryBuilder(toStackAfter.end())
+                        .lineToLinearHeading(new Pose2d(57, -12, Math.toRadians(90)))
                 .build();
 
-        Trajectory zone2Strafe = drive.trajectoryBuilder(toJunction.end())
-                .lineToLinearHeading(new Pose2d(0, zone1Y, Math.toRadians(90)))
+        Trajectory zone1Strafe = drive.trajectoryBuilder(toStackAfter.end())
+                .lineToLinearHeading(new Pose2d(12, -12, Math.toRadians(90)))
+                .build();
+
+        Trajectory zone2Strafe = drive.trajectoryBuilder(toStackAfter.end())
+                .lineToLinearHeading(new Pose2d(36, -12, Math.toRadians(90)))
                 .build();
 
 
