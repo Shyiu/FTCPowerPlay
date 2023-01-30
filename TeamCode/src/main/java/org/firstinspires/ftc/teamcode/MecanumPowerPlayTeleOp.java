@@ -59,7 +59,7 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
         Logging.setup();
         Logging.log("Starting Tele-Op Logging");
     }
-    public void runOpMode() {
+    public void runOpMode() throws InterruptedException{
         BNO055IMU imu = hardwareMap.get(BNO055IMU.class, names.imu);
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         // Technically this is the default, however specifying it is clearer
