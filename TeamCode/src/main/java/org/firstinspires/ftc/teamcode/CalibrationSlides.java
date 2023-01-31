@@ -13,7 +13,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class CalibrationSlides extends LinearOpMode {
     DcMotor testingMotor;
     NormalizedColorSensor color;
-    public static double GAIN = 15;
+    public static double GAIN = 30;
     //1540 1008 86
     enum SLIDE_STATE {
             IDLE,
@@ -21,7 +21,7 @@ public class CalibrationSlides extends LinearOpMode {
             GOING_DOWN
     }
     SLIDE_STATE slideState = SLIDE_STATE.IDLE;
-
+    public boolean auto = false;
     private ElapsedTime runtime = new ElapsedTime();
     public int positions[] = {-5107, -1520, 644, 2800};
 
@@ -41,6 +41,7 @@ public class CalibrationSlides extends LinearOpMode {
         while (opModeIsActive() && !isStopRequested()) {
             switch (slideState){
                 case IDLE:
+                    auto = false;
                     if (Math.abs(gamepad1.left_stick_y) > 0){
                         power = -gamepad1.left_stick_y/3.0;
                     }
@@ -60,19 +61,21 @@ public class CalibrationSlides extends LinearOpMode {
                         slideState = SLIDE_STATE.GOING_UP;
                         color.setGain((float) GAIN);
                         testingMotor.setPower(.3);
+                        auto = true;
                     }
                     if (gamepad1.x || gamepad2.x){
                         slideState = SLIDE_STATE.GOING_DOWN;
                         color.setGain((float) GAIN);
                         colors = color.getNormalizedColors();
                         testingMotor.setPower(-.3);
+                        auto = true;
 
                     }
 
                 case GOING_UP:
-
+                    telemetry.addLine("UP");
                     colors = color.getNormalizedColors();
-                    if (colors.green > .37 && colors.red > .37){
+                    if (colors.green > .29 && colors.red > .58){
                         slideState = SLIDE_STATE.IDLE;
                         testingMotor.setPower(0);
                     }
@@ -80,19 +83,22 @@ public class CalibrationSlides extends LinearOpMode {
                         slideState = SLIDE_STATE.IDLE;
                         testingMotor.setPower(0);
                     }
+                    break;
                 case GOING_DOWN:
-
+                    telemetry.addLine("DOWN");
                     colors = color.getNormalizedColors();
-                    if (colors.green > .37 && colors.red > .37){
+                    if (colors.green > .29 && colors.red > .58){
                         colors = color.getNormalizedColors();
                         testingMotor.setPower(-.5);
                         sleep(500);
                         testingMotor.setPower(0);
+                        slideState = SLIDE_STATE.IDLE;
                     }
                     if (gamepad1.b || gamepad2.b){
                         slideState = SLIDE_STATE.IDLE;
                         testingMotor.setPower(0);
                     }
+                    break;
             }
 
             telemetry.addLine(testingMotor.getCurrentPosition() + "");
@@ -102,8 +108,9 @@ public class CalibrationSlides extends LinearOpMode {
                 testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             }
 
-
-            testingMotor.setPower(power);
+            if (!auto) {
+                testingMotor.setPower(power);
+            }
             colors = color.getNormalizedColors();
             color.setGain((float)GAIN);
             telemetry.addLine("Gamepad (1 or 2) Controls:\nLeft Stick Y Moves Motor\na resets the encoder position\ny brings the slides up to the color sensor\n x brings the slides down to be below color sensor");

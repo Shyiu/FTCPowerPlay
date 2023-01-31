@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.MecanumBot;
@@ -12,40 +13,50 @@ public class Lift {
     MecanumBot m = new MecanumBot();
     DcMotor slides;
     NormalizedColorSensor color;
-    double targetPos;
+    public double targetPos;
     double P, I, D;
     double error, lastError;
+    int startPos = Integer.MAX_VALUE;
     boolean up = true;
+    double GAIN = 30;
+    public boolean stopped = false;
+    HardwareMap hardware;
+
     public Lift(HardwareMap hardwareMap, double P, double I, double D) {
         slides = hardwareMap.get(DcMotor.class, m.slides);
         color = hardwareMap.get(NormalizedColorSensor.class, m.color);
         slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        this.hardware = hardwareMap;
         this.P = P;
         this.I = I;
         this.D = D;
 
     }
 
+    public boolean barelyBusy() {
+        return Math.abs(startPos - slides.getCurrentPosition()) < 1000;
+    }
+
     public boolean isBusy() {
-        if (up){
+        if (up) {
             return slides.getCurrentPosition() < targetPos;
-        }
-        else{
+        } else {
             return slides.getCurrentPosition() > targetPos;
         }
     }
-    public double getCurrentPos(){
+
+    public double getCurrentPos() {
         return slides.getCurrentPosition();
     }
 
     public void init() {
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
-        color.setGain((float) 15);
+        color.setGain((float) GAIN);
         slides.setPower(.7);
         NormalizedRGBA colors = color.getNormalizedColors();
-        while (colors.green < .42 && colors.red < .42) {
-            if(timer.seconds() > 1){
+        while (colors.green < .55 && colors.red < .55) {
+            if (timer.seconds() > 1) {
                 slides.setPower(0);
                 reset();
                 break;
@@ -60,10 +71,10 @@ public class Lift {
     }
 
     public void reset() {
-        color.setGain((float) 15);
-        slides.setPower(-.7);
+        color.setGain((float) GAIN);
+        slides.setPower(-.4);
         NormalizedRGBA colors = color.getNormalizedColors();
-        while (colors.green < .37 && colors.red < .37) {
+        while (colors.green < .55 && colors.red < .55) {
 
             colors = color.getNormalizedColors();
 
@@ -72,12 +83,15 @@ public class Lift {
         slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
-    public void setPower(double power){
+
+    public void setPower(double power) {
         slides.setPower(power);
     }
-    public int getCurrentPosition(){
+
+    public int getCurrentPosition() {
         return slides.getCurrentPosition();
     }
+
     public void control(double target, double timeoutS, double SLIDE_POWER) {
         double currentTime = System.currentTimeMillis();
         double slidesPosition = slides.getCurrentPosition();
@@ -99,6 +113,7 @@ public class Lift {
     public void move(double target) {
         targetPos = target;
         up = slides.getCurrentPosition() < target;
+        startPos = slides.getCurrentPosition();
     }
 
     public void update() {
@@ -109,7 +124,7 @@ public class Lift {
         double reference = targetPos;
 
         double integralSum = 0;
-        if(isBusy()) {
+        if (isBusy()) {
 // Elapsed timer class from SDK, please use it, it's epic
             ElapsedTime timer = new ElapsedTime();
 
@@ -126,15 +141,31 @@ public class Lift {
 
             double out = (Kp * error) + (Ki * integralSum) + (Kd * derivative);
 
-            slides.setPower(out);
+            slides.setPower(out / 3);
 
             // reset the timer for next time
             timer.reset();
-        }
-        else{
+            if(getBatteryVoltage() < 10){
+                move(getCurrentPosition() - 100);
+                stopped = true;
+            }
+            else{
+                stopped = false;
+            }
+        } else {
             slides.setPower(0);
         }
-        }
-
     }
 
+
+    double getBatteryVoltage() {
+        double result = Double.POSITIVE_INFINITY;
+        for (VoltageSensor sensor : hardware.voltageSensor) {
+            double voltage = sensor.getVoltage();
+            if (voltage > 0) {
+                result = Math.min(result, voltage);
+            }
+        }
+        return result;
+    }
+}

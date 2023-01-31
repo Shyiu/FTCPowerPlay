@@ -42,6 +42,9 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
         FIRST_TRAJ,
         SEC_TRAJ,
         PARK,
+        STACK_FIRST,
+        CYCLE,
+        STACK,
         IDLE
     }
 
@@ -65,9 +68,9 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
     final int ID_TAG_OF_INTEREST = 0;
     final int ID_TAG_OF_INTEREST_2 = 4;
     final int ID_TAG_OF_INTEREST_3 = 7;
-    public static double P = 30;
-    public static double I = 6;
-    public static double D = 0;
+    public static double P = 72;
+    public static double I = 16;
+    public static double D = 8;
 
     // UNITS ARE METERS
     final double TAGSIZE = 0.05;
@@ -87,13 +90,21 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
         TrajectorySequence firstDrive = drive.trajectorySequenceBuilder(startPose)
                 .strafeLeft(15)
                 .lineToLinearHeading(new Pose2d(11.5, -34.2, Math.toRadians(121.25)))
+                .forward(6)
                 .build();
-
         Trajectory toJunction = drive.trajectoryBuilder(firstDrive.end())
-                .forward(5)
+                .back(.01)
                 .build();
-        Trajectory toStack = drive.trajectoryBuilder(toJunction.end())
+        TrajectorySequence toStack = drive.trajectorySequenceBuilder(toJunction.end())
+                .back(8)
                 .splineToSplineHeading(new Pose2d(57, -12, Math.toRadians(0)), Math.toRadians(-15))
+                .addTemporalMarker(1.5, () -> {
+                    flapper.move(flapDown);
+                    // This marker runs two seconds into the trajectory
+                    slides.move(0);
+
+                    // Run your action in here!
+                })
                 .build();
         Trajectory scoreStack = drive.trajectoryBuilder(toStack.end())
                 .lineToLinearHeading(new Pose2d(33.1, -8.6, Math.toRadians(128)))
@@ -101,18 +112,35 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
         Trajectory toStackAfter = drive.trajectoryBuilder(scoreStack.end())
                 .lineToLinearHeading(new Pose2d(57, -12, Math.toRadians(0)))
                 .build();
+        Trajectory zone3Strafe = drive.trajectoryBuilder(toStackAfter.end())
+                .lineToLinearHeading(new Pose2d(56.9, -12, Math.toRadians(90)))
+                .addTemporalMarker(2, () -> {
+            // This marker runs two seconds into the trajectory
+            slides.move(0);
 
+            // Run your action in here!
+        })
 
-                Trajectory zone3Strafe = drive.trajectoryBuilder(toStackAfter.end())
-                        .lineToLinearHeading(new Pose2d(57, -12, Math.toRadians(90)))
                 .build();
 
         Trajectory zone1Strafe = drive.trajectoryBuilder(toStackAfter.end())
                 .lineToLinearHeading(new Pose2d(12, -12, Math.toRadians(90)))
+                .addTemporalMarker(2, () -> {
+                    // This marker runs two seconds into the trajectory
+                    slides.move(0);
+
+                    // Run your action in here!
+                })
                 .build();
 
         Trajectory zone2Strafe = drive.trajectoryBuilder(toStackAfter.end())
-                .lineToLinearHeading(new Pose2d(36, -12, Math.toRadians(90)))
+                .lineToLinearHeading(new Pose2d(36, -36, Math.toRadians(90)))
+                .addTemporalMarker(2, () -> {
+                    // This marker runs two seconds into the trajectory
+                    slides.move(0);
+
+                    // Run your action in here!
+                })
                 .build();
 
 
@@ -202,56 +230,62 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
         flapper.move(flapDown);
         sleep(500);
         slides.control(500, 3, 1);
-//        drive.followTrajectorySequenceAsync(firstDrive);
-        slides.move(4000);
+        drive.followTrajectorySequenceAsync(firstDrive);
+        slides.move(6710);
         while (opModeIsActive() && !isStopRequested()) {
-//            switch (state) {
-//                case PRELOAD:
-//                    telemetry.addLine("PRELOAD");
-//                    if (!drive.isBusy() && !slides.isBusy()) {
-//                        state = DRIVE_STATE.FIRST_TRAJ;
-//                        drive.followTrajectoryAsync(toJunction);
-//
-//                    }
-//                    break;
-//                case FIRST_TRAJ:
-//                    telemetry.addLine("FIRST_TRAJ");
-//
-//                    if(!drive.isBusy() && !slides.isBusy()) {
-//                        flapper.move(flapUp);
-//                        sleep(1000);
-//                        state = DRIVE_STATE.SEC_TRAJ;
-//                    }
-//                    break;
-//                case SEC_TRAJ:
-//                    telemetry.addLine("SEC_TRAJ");
-//
-//
-//                    if(!slides.isBusy() && !drive.isBusy()) {
-//                        if (parking_zone == 1) {
-//                            drive.followTrajectoryAsync(zone1Strafe);
-//                        } else if (parking_zone == 3) {
-//                            drive.followTrajectoryAsync(zone3Strafe);
-//                        } else {
-//                            drive.followTrajectoryAsync(zone2Strafe);
-//                        }
-//                        state = DRIVE_STATE.PARK;
-//                    }
-//                    break;
-//                case PARK:
-//                    telemetry.addLine("PARK");
-//
-//                    if (!drive.isBusy() && !slides.isBusy()) {
-//                        slides.move(0);
-//                        state = DRIVE_STATE.IDLE;
-//                    }
-//                    break;
-//                case IDLE:
-//                    telemetry.addLine("IDLE");
-//
-//                    break;
-//            }
-//            drive.update();
+            switch (state) {
+                case PRELOAD:
+                    telemetry.addLine("PRELOAD");
+                    if (!drive.isBusy() && !slides.isBusy()) {
+                        state = DRIVE_STATE.FIRST_TRAJ;
+                        drive.followTrajectoryAsync(toJunction);
+
+                    }
+                    break;
+                case FIRST_TRAJ:
+                    telemetry.addLine("FIRST_TRAJ");
+
+                    if(!drive.isBusy() && !slides.isBusy()) {
+                        flapper.move(flapUp);
+                        sleep(1000);
+                        state = DRIVE_STATE.STACK_FIRST;
+                    }
+                    break;
+                case STACK_FIRST:
+                    telemetry.addLine("STACK FIRST");
+                    if (!drive.isBusy() && !slides.isBusy()){
+                        drive.followTrajectorySequenceAsync(toStack);
+                        state = DRIVE_STATE.PARK;
+                    }
+                case SEC_TRAJ:
+                    telemetry.addLine("SEC_TRAJ");
+
+
+                    if(!slides.isBusy() && !drive.isBusy()) {
+                        if (parking_zone == 1) {
+                            drive.followTrajectoryAsync(zone1Strafe);
+                        } else if (parking_zone == 3) {
+                            drive.followTrajectoryAsync(zone3Strafe);
+                        } else {
+                            drive.followTrajectoryAsync(zone2Strafe);
+                        }
+                        state = DRIVE_STATE.PARK;
+                    }
+                    break;
+                case PARK:
+                    telemetry.addLine("PARK");
+
+                    if (!drive.isBusy() && !slides.isBusy()) {
+                        state = DRIVE_STATE.IDLE;
+                    }
+                    break;
+                case IDLE:
+                    telemetry.addLine("IDLE");
+
+                    break;
+            }
+
+            drive.update();
             slides.update();
             telemetry.addData("pos", slides.getCurrentPos());
             telemetry.update();
