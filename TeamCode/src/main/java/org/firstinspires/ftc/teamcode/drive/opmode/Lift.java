@@ -20,10 +20,15 @@ public class Lift {
     boolean up = true;
     double GAIN = 30;
     public boolean stopped = false;
+    private double powerReduction = 1;
+    private boolean reached = false;
+    private double threshold = .60;
+    private boolean auto = false;
     HardwareMap hardware;
 
     public Lift(HardwareMap hardwareMap, double P, double I, double D) {
         slides = hardwareMap.get(DcMotor.class, m.slides);
+        targetPos = slides.getCurrentPosition()-100;
         color = hardwareMap.get(NormalizedColorSensor.class, m.color);
         slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         this.hardware = hardwareMap;
@@ -32,15 +37,34 @@ public class Lift {
         this.D = D;
 
     }
+    public Lift(HardwareMap hardwareMap, double P, double I, double D, double powerReduction) {
+        slides = hardwareMap.get(DcMotor.class, m.slides);
+        targetPos = slides.getCurrentPosition()-100;
+        color = hardwareMap.get(NormalizedColorSensor.class, m.color);
+        slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        this.hardware = hardwareMap;
+        this.powerReduction = powerReduction;
+        this.P = P;
+        this.I = I;
+        this.D = D;
 
+    }
+    public void setMode(boolean b){
+        auto = b;
+    }
     public boolean barelyBusy() {
-        return Math.abs(startPos - slides.getCurrentPosition()) < 1000;
+        return Math.abs(startPos - slides.getCurrentPosition()) < Math.abs(targetPos-startPos)*0.2;
     }
 
     public boolean isBusy() {
+        if(reached){
+            return false;
+        }
         if (up) {
+            reached = slides.getCurrentPosition() >= targetPos;
             return slides.getCurrentPosition() < targetPos;
         } else {
+            reached = slides.getCurrentPosition() <= targetPos;
             return slides.getCurrentPosition() > targetPos;
         }
     }
@@ -53,9 +77,9 @@ public class Lift {
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
         color.setGain((float) GAIN);
-        slides.setPower(.7);
+        slides.setPower(.3);
         NormalizedRGBA colors = color.getNormalizedColors();
-        while (colors.green < .55 && colors.red < .55) {
+        while (colors.green < threshold && colors.red < threshold) {
             if (timer.seconds() > 1) {
                 slides.setPower(0);
                 reset();
@@ -67,14 +91,14 @@ public class Lift {
         slides.setPower(0);
         slides.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slides.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        control(-650, 2, .7);
+        // control(-650, 2, .7);
     }
 
     public void reset() {
         color.setGain((float) GAIN);
         slides.setPower(-.4);
         NormalizedRGBA colors = color.getNormalizedColors();
-        while (colors.green < .55 && colors.red < .55) {
+        while (colors.green < threshold && colors.red < threshold) {
 
             colors = color.getNormalizedColors();
 
@@ -114,8 +138,11 @@ public class Lift {
         targetPos = target;
         up = slides.getCurrentPosition() < target;
         startPos = slides.getCurrentPosition();
+        reached = false;
     }
-
+    public boolean getReached(){
+        return reached;
+    }
     public void update() {
         double Kp = P;
         double Ki = I;
@@ -124,7 +151,7 @@ public class Lift {
         double reference = targetPos;
 
         double integralSum = 0;
-        if (isBusy()) {
+        if (isBusy() && !reached) {
 // Elapsed timer class from SDK, please use it, it's epic
             ElapsedTime timer = new ElapsedTime();
 
@@ -141,19 +168,23 @@ public class Lift {
 
             double out = (Kp * error) + (Ki * integralSum) + (Kd * derivative);
 
-            slides.setPower(out / 3);
+            slides.setPower(out/powerReduction);
 
             // reset the timer for next time
             timer.reset();
-            if(getBatteryVoltage() < 10){
-                move(getCurrentPosition() - 100);
-                stopped = true;
-            }
-            else{
-                stopped = false;
-            }
-        } else {
+//            if(getBatteryVoltage() < 9.5){
+//                move(getCurrentPosition() - 100);
+//                stopped = true;
+//            }
+//            else{
+//                stopped = false;
+//            }
+        } else if(auto){
             slides.setPower(0);
+        }
+        else if(!reached){
+            slides.setPower(0);
+            reached = true;
         }
     }
 

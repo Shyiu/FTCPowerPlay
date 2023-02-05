@@ -81,27 +81,31 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        Lift slides = new Lift(hardwareMap, P, I, D);
+        Lift slides = new Lift(hardwareMap, P, I, D, 3);
+        slides.setMode(true);
         MecanumDrive drive = new MecanumDrive(hardwareMap);
         Intake flapper = new Intake(hardwareMap);
         Pose2d startPose = new Pose2d(33, -62, Math.toRadians(90));
 
         drive.setPoseEstimate(startPose);
         TrajectorySequence firstDrive = drive.trajectorySequenceBuilder(startPose)
-                .strafeLeft(15)
-                .lineToLinearHeading(new Pose2d(11.5, -34.2, Math.toRadians(121.25)))
-                .forward(6)
+                .forward(3)
+                .strafeLeft(13)
+                .lineToLinearHeading(new Pose2d(11, -34.2, Math.toRadians(121.25)))
+                .forward(5)
                 .build();
         Trajectory toJunction = drive.trajectoryBuilder(firstDrive.end())
                 .back(.01)
                 .build();
         TrajectorySequence toStack = drive.trajectorySequenceBuilder(toJunction.end())
-                .back(8)
-                .splineToSplineHeading(new Pose2d(57, -12, Math.toRadians(0)), Math.toRadians(-15))
+                .back(16)
+                .lineToLinearHeading(new Pose2d(14, -36, Math.toRadians(90)))
+                .lineToLinearHeading(new Pose2d(14,-14, Math.toRadians(0)))
+                .lineToLinearHeading(new Pose2d(63, -11, Math.toRadians(0)))
                 .addTemporalMarker(1.5, () -> {
                     flapper.move(flapDown);
                     // This marker runs two seconds into the trajectory
-                    slides.move(0);
+                    slides.move(2038);
 
                     // Run your action in here!
                 })
@@ -112,8 +116,9 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
         Trajectory toStackAfter = drive.trajectoryBuilder(scoreStack.end())
                 .lineToLinearHeading(new Pose2d(57, -12, Math.toRadians(0)))
                 .build();
-        Trajectory zone3Strafe = drive.trajectoryBuilder(toStackAfter.end())
-                .lineToLinearHeading(new Pose2d(56.9, -12, Math.toRadians(90)))
+        TrajectorySequence zone3Strafe = drive.trajectorySequenceBuilder(toJunction.end())
+                .back(8)
+                .lineToLinearHeading(new Pose2d(57, -31, Math.toRadians(90)))
                 .addTemporalMarker(2, () -> {
             // This marker runs two seconds into the trajectory
             slides.move(0);
@@ -123,8 +128,9 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
 
                 .build();
 
-        Trajectory zone1Strafe = drive.trajectoryBuilder(toStackAfter.end())
-                .lineToLinearHeading(new Pose2d(12, -12, Math.toRadians(90)))
+        TrajectorySequence zone1Strafe = drive.trajectorySequenceBuilder(toJunction.end())
+                .back(4.5)
+                .lineToLinearHeading(new Pose2d(16, -34, Math.toRadians(90)))
                 .addTemporalMarker(2, () -> {
                     // This marker runs two seconds into the trajectory
                     slides.move(0);
@@ -133,8 +139,9 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
                 })
                 .build();
 
-        Trajectory zone2Strafe = drive.trajectoryBuilder(toStackAfter.end())
-                .lineToLinearHeading(new Pose2d(36, -36, Math.toRadians(90)))
+        TrajectorySequence zone2Strafe = drive.trajectorySequenceBuilder(toJunction.end())
+                .back(4.5)
+                .lineToLinearHeading(new Pose2d(33, -34, Math.toRadians(90)))
                 .addTemporalMarker(2, () -> {
                     // This marker runs two seconds into the trajectory
                     slides.move(0);
@@ -222,16 +229,17 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
             telemetry.update();
             sleep(20);
         }
+        sleep(5250);
         state = DRIVE_STATE.PRELOAD;
-        slides.control(500, 3, 1);
+        slides.control(1200, 3, 1);
         flapper.move(flapUp);
-        sleep(750);
-        slides.control(-600, 2, 1);
+        sleep(1000);
+        slides.control(-300, 2, 1);
         flapper.move(flapDown);
         sleep(500);
-        slides.control(500, 3, 1);
+        slides.control(1200, 3, 1);
         drive.followTrajectorySequenceAsync(firstDrive);
-        slides.move(6710);
+        slides.move(7200);
         while (opModeIsActive() && !isStopRequested()) {
             switch (state) {
                 case PRELOAD:
@@ -246,9 +254,11 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
                     telemetry.addLine("FIRST_TRAJ");
 
                     if(!drive.isBusy() && !slides.isBusy()) {
+                        sleep(750);
                         flapper.move(flapUp);
                         sleep(1000);
-                        state = DRIVE_STATE.STACK_FIRST;
+                        flapper.move(flapDown);
+                        state = DRIVE_STATE.SEC_TRAJ;
                     }
                     break;
                 case STACK_FIRST:
@@ -262,12 +272,13 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
 
 
                     if(!slides.isBusy() && !drive.isBusy()) {
+
                         if (parking_zone == 1) {
-                            drive.followTrajectoryAsync(zone1Strafe);
+                            drive.followTrajectorySequenceAsync(zone1Strafe);
                         } else if (parking_zone == 3) {
-                            drive.followTrajectoryAsync(zone3Strafe);
+                            drive.followTrajectorySequenceAsync(zone3Strafe);
                         } else {
-                            drive.followTrajectoryAsync(zone2Strafe);
+                            drive.followTrajectorySequenceAsync(zone2Strafe);
                         }
                         state = DRIVE_STATE.PARK;
                     }
@@ -277,6 +288,7 @@ public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
 
                     if (!drive.isBusy() && !slides.isBusy()) {
                         state = DRIVE_STATE.IDLE;
+                        flapper.move(flapDown);
                     }
                     break;
                 case IDLE:

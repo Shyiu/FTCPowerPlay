@@ -37,7 +37,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 /**
- * {@link SensorMRRangeSensor} illustrates how to use the Modern Robotics
+ * {@link org.firstinspires.ftc.robotcontroller.external.samples.SensorMRRangeSensor} illustrates how to use the Modern Robotics
  * Range Sensor.
  *
  * The op mode assumes that the range sensor is configured with a name of "sensor_range".
@@ -48,6 +48,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  * @see <a href="http://modernroboticsinc.com/range-sensor">MR Range Sensor</a>
  */
 @TeleOp(name = "Sensor: MR range sensor", group = "Sensor")
+@Disabled
 public class SensorMRRangeSensor extends LinearOpMode {
 
     ModernRoboticsI2cRangeSensor rangeSensor;

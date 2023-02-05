@@ -20,6 +20,7 @@ public class CalibrationSlides extends LinearOpMode {
             GOING_UP,
             GOING_DOWN
     }
+    private double threshold = .6;
     SLIDE_STATE slideState = SLIDE_STATE.IDLE;
     public boolean auto = false;
     private ElapsedTime runtime = new ElapsedTime();
@@ -75,7 +76,7 @@ public class CalibrationSlides extends LinearOpMode {
                 case GOING_UP:
                     telemetry.addLine("UP");
                     colors = color.getNormalizedColors();
-                    if (colors.green > .29 && colors.red > .58){
+                    if (colors.green > threshold && colors.red > threshold){
                         slideState = SLIDE_STATE.IDLE;
                         testingMotor.setPower(0);
                     }
@@ -87,7 +88,7 @@ public class CalibrationSlides extends LinearOpMode {
                 case GOING_DOWN:
                     telemetry.addLine("DOWN");
                     colors = color.getNormalizedColors();
-                    if (colors.green > .29 && colors.red > .58){
+                    if (colors.green > threshold && colors.red > threshold){
                         colors = color.getNormalizedColors();
                         testingMotor.setPower(-.5);
                         sleep(500);
