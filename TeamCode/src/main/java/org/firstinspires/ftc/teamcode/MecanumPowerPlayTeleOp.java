@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.drive.opmode.Lift;
+import org.firstinspires.ftc.teamcode.obselete.PowerplayBot;
 
 //cd C:\Users\vihas\Android\platform-tools
 //adb.exe
@@ -30,7 +31,7 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
     protected Lift slides;
     protected DcMotor tape;
     protected DcMotorSimple flapper;
-    public static double MAX_SPEED = .9;
+    public static double MAX_SPEED = 1;
     protected NormalizedColorSensor color;
     final double FLAPPER_TIME = 0.5; //Amount of time till flappers timeout
     public enum DRIVE_STATE{

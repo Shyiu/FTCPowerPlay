@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.dashboard.config.Config;
+
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -11,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 //for dashboard
-/*@Config*/
+@Config
 public class JunctionPipeline extends OpenCvPipeline {
 
     //backlog of frames to average out to reduce noise
@@ -97,7 +99,7 @@ public class JunctionPipeline extends OpenCvPipeline {
         // return thresh;
         // note that you must not do thresh.release() if you want to return thresh
         // you also need to release the input if you return thresh(release as much as possible)
-        return input;
+        return edges;
     }
 
 
