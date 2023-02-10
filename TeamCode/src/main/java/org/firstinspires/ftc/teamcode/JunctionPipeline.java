@@ -2,105 +2,89 @@ package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvPipeline;
 
-import java.util.ArrayList;
-import java.util.List;
-
 //for dashboard
 @Config
 public class JunctionPipeline extends OpenCvPipeline {
-
-    //backlog of frames to average out to reduce noise
-    ArrayList<double[]> frameList;
-    //these are public static to be tuned in dashboard
-    public static double strictLowS = 140;
-    public static double strictHighS = 255;
-
-    public JunctionPipeline() {
-        frameList = new ArrayList<>();
+    Telemetry telemetry;
+    Mat mat = new Mat();
+    public enum Location {
+        LEFT,
+        RIGHT,
+        NOT_FOUND
     }
+    private Location location;
+
+    static final Rect LEFT_ROI = new Rect(
+            new Point(0, 224),
+            new Point(800, 448));
+    static final Rect RIGHT_ROI = new Rect(
+            new Point(480, 35),
+            new Point(800, 400));
+    static double PERCENT_COLOR_THRESHOLD = 0.4;
+
+    public JunctionPipeline(Telemetry t) { telemetry = t; }
 
     @Override
     public Mat processFrame(Mat input) {
-        Mat mat = new Mat();
-
-        //mat turns into HSV value
         Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGB2HSV);
-        if (mat.empty()) {
-            return input;
+        Scalar lowHSV = new Scalar(23, 50, 70);
+        Scalar highHSV = new Scalar(32, 255, 255);
+
+        Core.inRange(mat, lowHSV, highHSV, mat);
+
+        Mat left = mat.submat(LEFT_ROI);
+        Mat right = mat.submat(RIGHT_ROI);
+
+        double leftValue = Core.sumElems(left).val[0] / LEFT_ROI.area() / 255;
+        double rightValue = Core.sumElems(right).val[0] / RIGHT_ROI.area() / 255;
+
+        left.release();
+        right.release();
+
+        telemetry.addData("Left raw value", (int) Core.sumElems(left).val[0]);
+        telemetry.addData("Right raw value", (int) Core.sumElems(right).val[0]);
+        telemetry.addData("Left percentage", Math.round(leftValue * 100) + "%");
+        telemetry.addData("Right percentage", Math.round(rightValue * 100) + "%");
+
+        boolean stoneLeft = leftValue > PERCENT_COLOR_THRESHOLD;
+        boolean stoneRight = rightValue > PERCENT_COLOR_THRESHOLD;
+
+        if (stoneLeft && stoneRight) {
+            location = Location.NOT_FOUND;
+            telemetry.addData("Skystone Location", "not found");
         }
-
-        // lenient bounds will filter out near yellow, this should filter out all near yellow things(tune this if needed)
-        Scalar lowHSV = new Scalar(20, 70, 80); // lenient lower bound HSV for yellow
-        Scalar highHSV = new Scalar(32, 255, 255); // lenient higher bound HSV for yellow
-
-        Mat thresh = new Mat();
-
-        // Get a black and white image of yellow objects
-        Core.inRange(mat, lowHSV, highHSV, thresh);
-
-        Mat masked = new Mat();
-        //color the white portion of thresh in with HSV from mat
-        //output into masked
-        Core.bitwise_and(mat, mat, masked, thresh);
-        //calculate average HSV values of the white thresh values
-        Scalar average = Core.mean(masked, thresh);
-
-        Mat scaledMask = new Mat();
-        //scale the average saturation to 150
-        masked.convertTo(scaledMask, -1, 150 / average.val[1], 0);
-
-
-        Mat scaledThresh = new Mat();
-        //you probably want to tune this
-        Scalar strictLowHSV = new Scalar(0, strictLowS, 0); //strict lower bound HSV for yellow
-        Scalar strictHighHSV = new Scalar(255, strictHighS, 255); //strict higher bound HSV for yellow
-        //apply strict HSV filter onto scaledMask to get rid of any yellow other than pole
-        Core.inRange(scaledMask, strictLowHSV, strictHighHSV, scaledThresh);
-
-        Mat finalMask = new Mat();
-        //color in scaledThresh with HSV, output into finalMask(only useful for showing result)(you can delete)
-        Core.bitwise_and(mat, mat, finalMask, scaledThresh);
-
-        Mat edges = new Mat();
-        //detect edges(only useful for showing result)(you can delete)
-        Imgproc.Canny(scaledThresh, edges, 100, 200);
-
-        //contours, apply post processing to information
-        List<MatOfPoint> contours = new ArrayList<>();
-        Mat hierarchy = new Mat();
-        //find contours, input scaledThresh because it has hard edges
-        Imgproc.findContours(scaledThresh, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
-
-        //list of frames to reduce inconsistency, not too many so that it is still real-time, change the number from 5 if you want
-        if (frameList.size() > 5) {
-            frameList.remove(0);
+        else if (stoneLeft) {
+            location = Location.RIGHT;
+            telemetry.addData("Skystone Location", "right");
         }
+        else {
+            location = Location.LEFT;
+            telemetry.addData("Skystone Location", "left");
+        }
+        telemetry.update();
 
+        Imgproc.cvtColor(mat, mat, Imgproc.COLOR_GRAY2RGB);
 
-        //release all the data
-        input.release();
-        scaledThresh.copyTo(input);
-        scaledThresh.release();
-        scaledMask.release();
-        mat.release();
-        masked.release();
-        edges.release();
-        thresh.release();
-        finalMask.release();
-        //change the return to whatever mat you want
-        //for example, if I want to look at the lenient thresh:
-        // return thresh;
-        // note that you must not do thresh.release() if you want to return thresh
-        // you also need to release the input if you return thresh(release as much as possible)
-        return edges;
+        Scalar colorStone = new Scalar(255, 0, 0);
+        Scalar colorSkystone = new Scalar(0, 255, 0);
+
+        Imgproc.rectangle(mat, LEFT_ROI, location == Location.LEFT? colorSkystone:colorStone);
+        Imgproc.rectangle(mat, RIGHT_ROI, location == Location.RIGHT? colorSkystone:colorStone);
+
+        return mat;
     }
 
+    public Location getLocation() {
+        return location;
+    }
 
 }
