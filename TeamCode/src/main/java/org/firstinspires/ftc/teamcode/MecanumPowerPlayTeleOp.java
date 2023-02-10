@@ -198,6 +198,7 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
                     slides.move(SLIDE_POSITIONS[0]);
                     //if (time.seconds() - slideTimeout > SLIDE_TIME) {
                     slide_position = SLIDE_STATE.WAIT;
+                    flapper.setPower(flapDown);
                     //}
                     break;
                 case LOW:
