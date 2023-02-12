@@ -7,10 +7,10 @@ import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.MecanumBot;
+import org.firstinspires.ftc.teamcode.MecanumBotConstant;
 
 public class Lift {
-    MecanumBot m = new MecanumBot();
+    MecanumBotConstant m = new MecanumBotConstant();
     DcMotor slides;
     NormalizedColorSensor color;
     public double targetPos;

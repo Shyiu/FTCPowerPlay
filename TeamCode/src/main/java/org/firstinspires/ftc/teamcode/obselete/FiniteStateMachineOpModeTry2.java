@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.teamcode.MecanumBot;
+import org.firstinspires.ftc.teamcode.MecanumBotConstant;
 
 @Disabled
 @TeleOp(group = "Mecanum Tele-Op", name = "Mecanum Powerplay Teleop")
@@ -56,7 +56,7 @@ public class FiniteStateMachineOpModeTry2 extends OpMode {
     Servo armJoint2;
     Servo claw;
     BNO055IMU imu;
-    MecanumBot m = new MecanumBot();
+    MecanumBotConstant m = new MecanumBotConstant();
     @Override
     public void init() {
 

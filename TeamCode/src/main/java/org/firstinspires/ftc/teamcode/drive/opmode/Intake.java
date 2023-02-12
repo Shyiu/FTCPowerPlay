@@ -3,10 +3,10 @@ package org.firstinspires.ftc.teamcode.drive.opmode;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.MecanumBot;
+import org.firstinspires.ftc.teamcode.MecanumBotConstant;
 
 class Intake {
-    MecanumBot m = new MecanumBot();
+    MecanumBotConstant m = new MecanumBotConstant();
     DcMotorSimple flapper;
 
     public Intake(HardwareMap hardwareMap) {
