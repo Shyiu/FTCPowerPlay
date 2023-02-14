@@ -13,7 +13,7 @@ public final class MecanumBotConstant {
     public static double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 2761, 5020, TOP_HARDSTOP};
     public final String slides = "slides";
     public final String cameraApril = "Webcam 1";
-    public final String cameraJunction = "Webcam 2";
+    public final String cameraJunction = "Junction";
     public final String imu = "imu";
     public final String distance = "sensor_distance";
     public final String color = "sensor_color";
@@ -23,5 +23,6 @@ public final class MecanumBotConstant {
     public final double rightHardStopIn = 0.15;
     public final double leftHardStopOut = .5;
     public final double leftHardStopIn = -.35;
+    public final String led = "led";
     public final String tape = "tape_motor";
 }

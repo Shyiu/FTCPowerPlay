@@ -172,13 +172,13 @@ public class Lift {
 
             // reset the timer for next time
             timer.reset();
-//            if(getBatteryVoltage() < 9.5){
-//                move(getCurrentPosition() - 100);
-//                stopped = true;
-//            }
-//            else{
-//                stopped = false;
-//            }
+            if(getBatteryVoltage() < 8){
+                move(getCurrentPosition() - 100);
+                stopped = true;
+            }
+            else{
+                stopped = false;
+            }
         } else if(auto){
             slides.setPower(0);
         }
@@ -189,7 +189,7 @@ public class Lift {
     }
 
 
-    double getBatteryVoltage() {
+    public double getBatteryVoltage() {
         double result = Double.POSITIVE_INFINITY;
         for (VoltageSensor sensor : hardware.voltageSensor) {
             double voltage = sensor.getVoltage();

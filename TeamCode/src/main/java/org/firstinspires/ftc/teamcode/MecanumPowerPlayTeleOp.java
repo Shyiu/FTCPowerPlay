@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -10,7 +11,6 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.drive.opmode.Lift;
-import org.firstinspires.ftc.teamcode.obselete.PowerplayBot;
 
 //cd C:\Users\vihas\Android\platform-tools
 //adb.exe
@@ -47,12 +47,20 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
         HIGH,
         WAIT
     }
-
+    public enum LIGHT_STATE{
+        DEFAULT,
+        PARK_ALERT,
+        OVERRIDE_SLIDES,
+        CONE_GRAB,
+        VOLTAGE
+    }
+    LIGHT_STATE led = LIGHT_STATE.DEFAULT;
     SLIDE_STATE slide_position = SLIDE_STATE.WAIT;
     //Between field centric, straightforward and my weird version
     double leftTgtPower = 0, rightTgtPower = 0;
-
-    public PowerplayBot names = new PowerplayBot();
+    RevBlinkinLedDriver.BlinkinPattern park, override, cone, voltage;
+    RevBlinkinLedDriver ledDevice;
+    public MecanumBotConstant names = new MecanumBotConstant();
     //60 is encoder position
     //Slide Related Variables
     double TOP_HARDSTOP = 7115;
@@ -92,12 +100,18 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
 
+        ledDevice = hardwareMap.get(RevBlinkinLedDriver.class, names.led);
+        voltage = RevBlinkinLedDriver.BlinkinPattern.FIRE_LARGE;
+        park = RevBlinkinLedDriver.BlinkinPattern.BLUE;
+        cone = RevBlinkinLedDriver.BlinkinPattern.GOLD;
+        override = RevBlinkinLedDriver.BlinkinPattern.BREATH_RED;
 
         // Makes the Driver Hub output the message "Status: Initialized"
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         time.reset();
+        double LEDTIME = time.time();
         while(!isStopRequested() && opModeIsActive()) {
 
             switch (command) {
@@ -225,6 +239,7 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
             }
             if (gamepad2.b) {
                 if (toggleHardstops) {
+                    led = LIGHT_STATE.OVERRIDE_SLIDES;
                     if (slideIndex == 0) {
                         double difference = slides.getCurrentPosition() - BOTTOM_HARDSTOP;
                         BOTTOM_HARDSTOP = slides.getCurrentPosition();
@@ -249,6 +264,7 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
                     telemetry.update();
                 } else {
                     toggleHardstops = true;
+                    led = LIGHT_STATE.DEFAULT;
                     while (gamepad2.b) {
                         telemetry.addLine("waiting for User to Release B");
                         telemetry.update();
@@ -269,6 +285,33 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
 
             if (slides.isBusy()) {
                 slides.update();
+            }
+            switch (led){
+                case DEFAULT:
+                    if(time.time() - LEDTIME > 135){
+                        led = LIGHT_STATE.PARK_ALERT;
+                    }
+                    else if (slides.getBatteryVoltage() < 8){
+                        led = LIGHT_STATE.VOLTAGE;
+                    }
+                    ledDevice.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLACK);
+                    break;
+
+                case VOLTAGE:
+                    ledDevice.setPattern(voltage);
+                    if (slides.getBatteryVoltage() > 8){
+                        led = LIGHT_STATE.DEFAULT;
+                    }
+                    break;
+                case OVERRIDE_SLIDES:
+                    ledDevice.setPattern(override);
+                    break;
+                case PARK_ALERT:
+                    ledDevice.setPattern(park);
+                    break;
+                case CONE_GRAB:
+                    ledDevice.setPattern(cone);
+                    break;
             }
             telemetry.addData("Left Target Power", leftTgtPower);
             telemetry.addData("Right Target Power", rightTgtPower);

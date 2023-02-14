@@ -42,10 +42,10 @@ public class JunctionRunner extends LinearOpMode {
 
         waitForStart();
         switch (detector.getLocation()) {
-            case LEFT:
+            case TARGET:
                 // ...
                 break;
-            case RIGHT:
+            case UP:
                 // ...
                 break;
             case NOT_FOUND:

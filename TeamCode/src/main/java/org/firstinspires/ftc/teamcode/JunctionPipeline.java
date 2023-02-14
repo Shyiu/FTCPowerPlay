@@ -17,18 +17,23 @@ public class JunctionPipeline extends OpenCvPipeline {
     Telemetry telemetry;
     Mat mat = new Mat();
     public enum Location {
-        LEFT,
-        RIGHT,
+        TARGET,
+        UP,
+        BELOW,
         NOT_FOUND
     }
     private Location location;
 
-    static final Rect LEFT_ROI = new Rect(
-            new Point(0, 224),
+    static final Rect TARGET = new Rect(
+            new Point(0, 150),
+            new Point(800, 350));
+    static final Rect TOP_TARGET = new Rect(
+            new Point(0, 0),
+            new Point(800, 150));
+    static final Rect BOTTOM_TARGET = new Rect(
+            new Point(0, 350),
             new Point(800, 448));
-    static final Rect RIGHT_ROI = new Rect(
-            new Point(480, 35),
-            new Point(800, 400));
+
     static double PERCENT_COLOR_THRESHOLD = 0.4;
 
     public JunctionPipeline(Telemetry t) { telemetry = t; }
@@ -41,34 +46,44 @@ public class JunctionPipeline extends OpenCvPipeline {
 
         Core.inRange(mat, lowHSV, highHSV, mat);
 
-        Mat left = mat.submat(LEFT_ROI);
-        Mat right = mat.submat(RIGHT_ROI);
+        Mat targetMat = mat.submat(TARGET);
+        Mat topMat = mat.submat(TOP_TARGET);
+        Mat bottomMat = mat.submat(BOTTOM_TARGET);
 
-        double leftValue = Core.sumElems(left).val[0] / LEFT_ROI.area() / 255;
-        double rightValue = Core.sumElems(right).val[0] / RIGHT_ROI.area() / 255;
 
-        left.release();
-        right.release();
+        double targetValue = Core.sumElems(targetMat).val[0] / TARGET.area() / 255;
+        double topValue = Core.sumElems(topMat).val[0] / TOP_TARGET.area() / 255;
+        double bottomValue = Core.sumElems(bottomMat).val[0] / BOTTOM_TARGET.area() / 255;
 
-        telemetry.addData("Left raw value", (int) Core.sumElems(left).val[0]);
-        telemetry.addData("Right raw value", (int) Core.sumElems(right).val[0]);
-        telemetry.addData("Left percentage", Math.round(leftValue * 100) + "%");
-        telemetry.addData("Right percentage", Math.round(rightValue * 100) + "%");
+        bottomMat.release();
+        targetMat.release();
+        topMat.release();
 
-        boolean stoneLeft = leftValue > PERCENT_COLOR_THRESHOLD;
-        boolean stoneRight = rightValue > PERCENT_COLOR_THRESHOLD;
+        telemetry.addData("Left raw value", (int) Core.sumElems(targetMat).val[0]);
+        telemetry.addData("Right raw value", (int) Core.sumElems(topMat).val[0]);
+        telemetry.addData("Left percentage", Math.round(targetValue * 100) + "%");
+        telemetry.addData("Right percentage", Math.round(topValue * 100) + "%");
 
-        if (stoneLeft && stoneRight) {
+        boolean onTarget = targetValue > PERCENT_COLOR_THRESHOLD;
+        boolean aboveTarget = topValue > PERCENT_COLOR_THRESHOLD;
+        boolean bottomTarget = bottomValue > PERCENT_COLOR_THRESHOLD;
+
+
+        if (onTarget && aboveTarget && bottomTarget) {
             location = Location.NOT_FOUND;
-            telemetry.addData("Skystone Location", "not found");
+            telemetry.addData("Junction Location", "Literally Trash");
         }
-        else if (stoneLeft) {
-            location = Location.RIGHT;
-            telemetry.addData("Skystone Location", "right");
+        else if (onTarget) {
+            location = Location.TARGET;
+            telemetry.addData("Junction Location", "Target");
+        }
+        else if (bottomTarget){
+            location = Location.BELOW;
+            telemetry.addData("Junction Location", "Below");
         }
         else {
-            location = Location.LEFT;
-            telemetry.addData("Skystone Location", "left");
+            location = Location.UP;
+            telemetry.addData("Junction Location", "UP");
         }
         telemetry.update();
 
@@ -77,8 +92,8 @@ public class JunctionPipeline extends OpenCvPipeline {
         Scalar colorStone = new Scalar(255, 0, 0);
         Scalar colorSkystone = new Scalar(0, 255, 0);
 
-        Imgproc.rectangle(mat, LEFT_ROI, location == Location.LEFT? colorSkystone:colorStone);
-        Imgproc.rectangle(mat, RIGHT_ROI, location == Location.RIGHT? colorSkystone:colorStone);
+        Imgproc.rectangle(mat, TARGET, location == Location.TARGET ? colorSkystone:colorStone);
+        Imgproc.rectangle(mat, TOP_TARGET, location == Location.UP ? colorSkystone:colorStone);
 
         return mat;
     }
