@@ -96,7 +96,7 @@ public class Lift {
 
     public void reset() {
         color.setGain((float) GAIN);
-        slides.setPower(-.4);
+        slides.setPower(-.3);
         NormalizedRGBA colors = color.getNormalizedColors();
         while (colors.green < threshold && colors.red < threshold) {
 

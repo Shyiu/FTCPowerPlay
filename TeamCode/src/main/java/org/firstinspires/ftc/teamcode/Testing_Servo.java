@@ -153,10 +153,15 @@ public class Testing_Servo extends LinearOpMode {
             }
             telemetry.addLine("Gamepad1 Controls:\nx:0.1\ny:0.01\n:a:-0.1\nb:-0.01");
             telemetry.addData("Right Servo Position", rightServo.getPower());
+            telemetry.addData("Right Servo In Hardstop", m.rightHardStopIn);
+            telemetry.addData("Right Servo Out Hardstop", m.rightHardStopOut);
             telemetry.addData("Left Servo Position", leftServo.getPower());
+            telemetry.addData("Left Servo In Hardstop", m.leftHardStopIn);
+            telemetry.addData("Left Servo Out Hardstop", m.leftHardStopOut);
             telemetry.update();
         }
-
+        rightServo.setPower(m.rightServoClosedPosition);
+        leftServo.setPower(m.leftServoClosedPosition);
     }
 
     public double closerToV2(double v1, double v2, double v3){

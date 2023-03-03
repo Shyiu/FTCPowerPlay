@@ -26,14 +26,12 @@ public class MeepMeMain {
                         drive.trajectorySequenceBuilder(new Pose2d(33, -62, Math.toRadians(90)))
                                 .strafeLeft(15)
                                 .lineToLinearHeading(new Pose2d(11.5, -34.2, Math.toRadians(121.25)))
-                                .splineToSplineHeading(new Pose2d(57, -12, Math.toRadians(0)), Math.toRadians(-15))
-                                .lineToLinearHeading(new Pose2d(33.1, -8.6, Math.toRadians(128)))
-                                .lineToLinearHeading(new Pose2d(57, -12, Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(33.1, -8.6, Math.toRadians(128)))
-                                .lineToLinearHeading(new Pose2d(57, -12, Math.toRadians(0)))
-                                .lineToLinearHeading(new Pose2d(33.1, -8.6, Math.toRadians(128)))
-                                .lineToLinearHeading(new Pose2d(36, -12, Math.toRadians(90)))
-
+                                .lineToLinearHeading(new Pose2d(12.5, -26.7, Math.toRadians(90)))
+//                                .splineToSplineHeading(new Pose2d(57, -12, Math.toRadians(0)), Math.toRadians(-1.75))
+                                .back(16)
+                                .lineToLinearHeading(new Pose2d(13.5,-33.2, Math.toRadians(90)))
+                                .lineToLinearHeading(new Pose2d(13.5, -26.7, Math.toRadians(90)))
+                                .splineToSplineHeading(new Pose2d(70, -4, Math.toRadians(0)), Math.toRadians(-1.75))
                                 .build()
                 );
 

@@ -7,13 +7,31 @@ import org.firstinspires.ftc.teamcode.MecanumBotConstant;
 
 class Intake {
     MecanumBotConstant m = new MecanumBotConstant();
-    DcMotorSimple flapper;
-
+    DcMotorSimple right;
+    DcMotorSimple left;
+    enum state{
+            OPEN,
+            CLOSE
+    };
+    state position = state.CLOSE;
     public Intake(HardwareMap hardwareMap) {
-        flapper = hardwareMap.get(DcMotorSimple.class, m.intake);
+        right = hardwareMap.get(DcMotorSimple.class, m.right_servo);
+        left = hardwareMap.get(DcMotorSimple.class, m.left_servo);
     }
 
-    public void move(double position) {
-        flapper.setPower(position);
+    public void move(state pos) {
+        switch(pos){
+            case OPEN:
+                right.setPower(m.rightServoOpenPosition);
+                left.setPower(m.leftServoOpenPosition);
+                break;
+            case CLOSE:
+                right.setPower(m.rightServoClosedPosition);
+                left.setPower(m.leftServoClosedPosition);
+                break;
+        }
+
+
+
     }
 }
