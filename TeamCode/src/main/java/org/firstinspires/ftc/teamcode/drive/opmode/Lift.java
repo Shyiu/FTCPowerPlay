@@ -21,8 +21,9 @@ public class Lift {
     double GAIN = 30;
     public boolean stopped = false;
     private double powerReduction = 1;
+    private double conversion = -1;
     private boolean reached = false;
-    private double threshold = .60;
+    private double threshold = .71;
     private boolean auto = false;
     HardwareMap hardware;
 
@@ -31,6 +32,7 @@ public class Lift {
         targetPos = slides.getCurrentPosition()-100;
         color = hardwareMap.get(NormalizedColorSensor.class, m.color);
         slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        slides.setDirection(DcMotor.Direction.REVERSE);
         this.hardware = hardwareMap;
         this.P = P;
         this.I = I;
@@ -42,6 +44,7 @@ public class Lift {
         targetPos = slides.getCurrentPosition()-100;
         color = hardwareMap.get(NormalizedColorSensor.class, m.color);
         slides.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        slides.setDirection(DcMotor.Direction.REVERSE);
         this.hardware = hardwareMap;
         this.powerReduction = powerReduction;
         this.P = P;
@@ -70,17 +73,17 @@ public class Lift {
     }
 
     public double getCurrentPos() {
-        return slides.getCurrentPosition();
+        return slides.getCurrentPosition() * conversion;
     }
 
     public void init() {
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
         color.setGain((float) GAIN);
-        slides.setPower(.3);
+        slides.setPower(.2);
         NormalizedRGBA colors = color.getNormalizedColors();
         while (colors.green < threshold && colors.red < threshold) {
-            if (timer.seconds() > 1) {
+            if (timer.seconds() > 6) {
                 slides.setPower(0);
                 reset();
                 break;
@@ -96,7 +99,7 @@ public class Lift {
 
     public void reset() {
         color.setGain((float) GAIN);
-        slides.setPower(-.3);
+        slides.setPower(-.2);
         NormalizedRGBA colors = color.getNormalizedColors();
         while (colors.green < threshold && colors.red < threshold) {
 

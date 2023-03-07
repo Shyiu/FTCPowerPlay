@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.MecanumBotConstant;
 
-class Intake {
+public class Intake {
     MecanumBotConstant m = new MecanumBotConstant();
     DcMotorSimple right;
     DcMotorSimple left;
