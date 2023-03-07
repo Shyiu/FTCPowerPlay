@@ -65,7 +65,10 @@ public class MecanumDrive extends com.acmerobotics.roadrunner.drive.MecanumDrive
     public static double VX_WEIGHT = 1;
     public static double VY_WEIGHT = 1;
     public static double OMEGA_WEIGHT = 1;
-
+    public static boolean flReverse = true;
+    public static boolean frReverse = true;
+    public static boolean brReverse = true;
+    public static boolean blReverse = false;
     private TrajectorySequenceRunner trajectorySequenceRunner;
     public MecanumBotConstant m = new MecanumBotConstant();
     private static final TrajectoryVelocityConstraint VEL_CONSTRAINT = getVelocityConstraint(MAX_VEL, MAX_ANG_VEL, TRACK_WIDTH);
@@ -136,10 +139,22 @@ public class MecanumDrive extends com.acmerobotics.roadrunner.drive.MecanumDrive
         rightFrontEncoder = new Encoder(rightFront);
         rightRearEncoder = new Encoder(rightRear);
 
-        leftFrontEncoder.setDirection(Encoder.Direction.REVERSE);
-        leftRearEncoder.setDirection(Encoder.Direction.REVERSE);
-        rightFrontEncoder.setDirection(Encoder.Direction.REVERSE);
-        rightRearEncoder.setDirection(Encoder.Direction.REVERSE);
+        if(flReverse)
+            leftFrontEncoder.setDirection(Encoder.Direction.REVERSE);
+        else
+            leftFrontEncoder.setDirection(Encoder.Direction.FORWARD);
+        if(frReverse)
+            rightFrontEncoder.setDirection(Encoder.Direction.REVERSE);
+        else
+            rightFrontEncoder.setDirection(Encoder.Direction.FORWARD);
+        if(blReverse)
+            leftRearEncoder.setDirection(Encoder.Direction.REVERSE);
+        else
+            leftRearEncoder.setDirection(Encoder.Direction.FORWARD);
+        if(brReverse)
+            rightRearEncoder.setDirection(Encoder.Direction.REVERSE);
+        else
+            rightRearEncoder.setDirection(Encoder.Direction.FORWARD);
 
         motors = Arrays.asList(leftFront, leftRear, rightRear, rightFront);
         encoders = Arrays.asList(leftFrontEncoder, leftRearEncoder, rightRearEncoder, rightFrontEncoder);
@@ -304,6 +319,7 @@ public class MecanumDrive extends com.acmerobotics.roadrunner.drive.MecanumDrive
         for (DcMotorEx motor : motors) {
             wheelVelocities.add(encoderTicksToInches(motor.getVelocity()));
         }
+//        wheelVelocities.set(0, wheelVelocities.get(0) * -1);
         return wheelVelocities;
     }
 
