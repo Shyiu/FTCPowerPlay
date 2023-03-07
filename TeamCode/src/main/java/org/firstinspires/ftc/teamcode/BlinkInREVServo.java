@@ -23,7 +23,6 @@ public class BlinkInREVServo extends LinearOpMode {
     ElapsedTime timer = new ElapsedTime();
     double currentTime = 0;
     boolean closedPrior = false;
-    final double flapUp = .379;
     final double flapDown = .77;
     MecanumBotConstant m = new MecanumBotConstant();
     @Override
