@@ -33,7 +33,6 @@ import java.util.HashMap;
 public class MecanumRoadRunnerAutoAsyncTest extends LinearOpMode {
     public static int parking_zone = 2;
     public static double zone3X = 20;
-    final double flapUp = .379;
     final double flapDown = .77;
     public static double zone1Y = 31;
     public static double zone1X = 17;

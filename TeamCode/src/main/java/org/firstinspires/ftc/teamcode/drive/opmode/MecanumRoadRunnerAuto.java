@@ -27,7 +27,7 @@
 //public class MecanumRoadRunnerAuto extends LinearOpMode {
 //    public static int parking_zone = 2;
 //    public static double zone3X = 20;
-//    final double flapUp = .379;
+//    final double Intake.state.OPEN = .379;
 //    final double flapDown = .77;
 //    public static double zone1Y = 31;
 //    public static double zone1X = 17;
@@ -178,7 +178,7 @@
 //            sleep(20);
 //        }
 //        slides.control(500, 3, 1);
-//        flapper.move(flapUp);
+//        flapper.move(Intake.state.OPEN);
 //        sleep(750);
 //        slides.control(-600, 2, 1);
 //        flapper.move(flapDown);
@@ -188,7 +188,7 @@
 //        slides.control(6933,8,1);
 //        drive.followTrajectory(toJunction);
 //
-//        flapper.move(flapUp);
+//        flapper.move(Intake.state.OPEN);
 //
 //        sleep(1000);
 //
