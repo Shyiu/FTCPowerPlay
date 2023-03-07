@@ -106,17 +106,18 @@ public class MecanumRoadRunnerAutoAsyncTest extends LinearOpMode {
                 .lineToLinearHeading(new Pose2d(13.5,-33.2, Math.toRadians(90)))
                 .lineToLinearHeading(new Pose2d(13.5, -26.7, Math.toRadians(90)))
                 .splineToSplineHeading(new Pose2d(70, -4, Math.toRadians(0)), Math.toRadians(-1.75))
-                .addTemporalMarker(1.5, () -> {
+                .addDisplacementMarker(.25,0 , () -> {
                     // This marker runs two seconds into the trajectory
                     slides.move(854);
 
                     // Run your action in here!
                 })
-                .addTemporalMarker(4.5, () -> {
+                .addDisplacementMarker(.5,0, () -> {
                     flapper.move(Intake.state.OPEN);
                 })
                 .build();
         TrajectorySequence scoreStack = drive.trajectorySequenceBuilder(toStack.end())
+                .waitSeconds(2)
                 .back(18)
                 .addTemporalMarker(.2,() -> {
                     slides.move(7350);
@@ -132,7 +133,7 @@ public class MecanumRoadRunnerAutoAsyncTest extends LinearOpMode {
         TrajectorySequence zone3Strafe = drive.trajectorySequenceBuilder(toJunction.end())
                 .back(8)
                 .lineToLinearHeading(new Pose2d(57, -31, Math.toRadians(90)))
-                .addTemporalMarker(2, () -> {
+                .addDisplacementMarker(.9,0, () -> {
                     // This marker runs two seconds into the trajectory
                     slides.move(0);
 
@@ -144,7 +145,7 @@ public class MecanumRoadRunnerAutoAsyncTest extends LinearOpMode {
         TrajectorySequence zone1Strafe = drive.trajectorySequenceBuilder(toJunction.end())
                 .back(4.5)
                 .lineToLinearHeading(new Pose2d(16, -34, Math.toRadians(90)))
-                .addTemporalMarker(2, () -> {
+                .addDisplacementMarker(.9,0, () -> {
                     // This marker runs two seconds into the trajectory
                     slides.move(0);
 
@@ -155,7 +156,7 @@ public class MecanumRoadRunnerAutoAsyncTest extends LinearOpMode {
         TrajectorySequence zone2Strafe = drive.trajectorySequenceBuilder(toJunction.end())
                 .back(4.5)
                 .lineToLinearHeading(new Pose2d(33, -34, Math.toRadians(90)))
-                .addTemporalMarker(2, () -> {
+                .addDisplacementMarker(.9,0, () -> {
                     // This marker runs two seconds into the trajectory
                     slides.move(0);
 
