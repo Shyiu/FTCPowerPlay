@@ -20,18 +20,18 @@ public class CalibrationSlides extends LinearOpMode {
             GOING_UP,
             GOING_DOWN
     }
-    private double threshold = .6;
+    private double threshold = .71;
     SLIDE_STATE slideState = SLIDE_STATE.IDLE;
     public boolean auto = false;
     private ElapsedTime runtime = new ElapsedTime();
     public int positions[] = {-5107, -1520, 644, 2800};
-
+    public static double upPower = .3;
     @Override
     public void runOpMode() {
         testingMotor = hardwareMap.get(DcMotor.class, "slides");//change name to servo that is being tested.
         testingMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        testingMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        testingMotor.setDirection(DcMotor.Direction.FORWARD);
+        testingMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        testingMotor.setDirection(DcMotor.Direction.REVERSE);
         testingMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         color = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
         telemetry.addLine(testingMotor.getCurrentPosition() + "");
@@ -61,14 +61,14 @@ public class CalibrationSlides extends LinearOpMode {
                     if (gamepad1.y || gamepad2.y){
                         slideState = SLIDE_STATE.GOING_UP;
                         color.setGain((float) GAIN);
-                        testingMotor.setPower(.3);
+                        testingMotor.setPower(upPower);
                         auto = true;
                     }
                     if (gamepad1.x || gamepad2.x){
                         slideState = SLIDE_STATE.GOING_DOWN;
                         color.setGain((float) GAIN);
                         colors = color.getNormalizedColors();
-                        testingMotor.setPower(-.3);
+                        testingMotor.setPower(-.1);
                         auto = true;
 
                     }
@@ -90,7 +90,7 @@ public class CalibrationSlides extends LinearOpMode {
                     colors = color.getNormalizedColors();
                     if (colors.green > threshold && colors.red > threshold){
                         colors = color.getNormalizedColors();
-                        testingMotor.setPower(-.5);
+                        testingMotor.setPower(-.1);
                         sleep(500);
                         testingMotor.setPower(0);
                         slideState = SLIDE_STATE.IDLE;
@@ -118,7 +118,7 @@ public class CalibrationSlides extends LinearOpMode {
             telemetry.addData("Color Blue", colors.blue);
             telemetry.addData("Color Red", colors.red);
             telemetry.addData("Color Green", colors.green);
-            telemetry.addData("Slide Position", testingMotor.getCurrentPosition());
+            telemetry.addData("Slide Position", -testingMotor.getCurrentPosition());
             telemetry.addData("Slide power", testingMotor.getPower());
             telemetry.addData("power", -gamepad1.left_stick_y/3.0);
             telemetry.update();
