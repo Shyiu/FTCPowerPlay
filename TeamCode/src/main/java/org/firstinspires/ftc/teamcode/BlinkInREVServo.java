@@ -2,11 +2,13 @@ package org.firstinspires.ftc.teamcode;
 
 
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+@Disabled
 @TeleOp(name="REV STUFF WHY", group="Testing_Servo")
 public class BlinkInREVServo extends LinearOpMode {
     RevBlinkinLedDriver rightServo;
