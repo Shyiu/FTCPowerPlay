@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.drive.opmode;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -22,20 +23,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 @Config
-@Autonomous(name = "Mecanum Roadrunner Async To Junction")
+@Autonomous(name = "Mecanum Roadrunner Async To Junction", preselectTeleOp = "Mecanum Power Play Teleop")
 public class MecanumRoadRunnerAutoAsyncJunctionDetection extends LinearOpMode {
     public static int parking_zone = 2;
     public static double zone3X = 20;
     final double flapDown = .77;
     public static double zone1Y = 31;
     public static double zone1X = 17;
-
+    public double pauseTime = 0;
+    public int conesLeft = 5;
     enum DRIVE_STATE {
         PRELOAD,
-        FIRST_SCORE,
+        FIRST_TRAJ,
         SEC_TRAJ,
         PARK,
         STACK_FIRST,
+        SCORE_STACK,
+        toJunction,
+        SCORE_STACK2,
+        SCORE_STACK3,
+        STACK_SECOND,
         CYCLE,
         STACK,
         IDLE
@@ -87,21 +94,20 @@ public class MecanumRoadRunnerAutoAsyncJunctionDetection extends LinearOpMode {
                 .forward(3)
                 .strafeLeft(13)
                 .lineToLinearHeading(new Pose2d(11, -34.2, Math.toRadians(121.25)))
-                .forward(5)
                 .build();
         Trajectory toJunction = drive.trajectoryBuilder(firstDrive.end().plus(new Pose2d(0,0,Math.toRadians(turns))))
-                .back(.01)
+                .forward(6)
                 .build();
 
         TrajectorySequence toStack = drive.trajectorySequenceBuilder(toJunction.end())
-                .back(16)
-                .lineToLinearHeading(new Pose2d(13.5,-33.2, Math.toRadians(90)))
-                .lineToLinearHeading(new Pose2d(13.5, -26.7, Math.toRadians(90)))
-                .splineToSplineHeading(new Pose2d(70, -4, Math.toRadians(0)), Math.toRadians(-1.75))
+                .waitSeconds(.75)
+                .back(8)
+                .lineToLinearHeading(new Pose2d(14,-33.2, Math.toRadians(90)))
+                .lineToLinearHeading(new Pose2d(14, -26.7, Math.toRadians(90)))
+                .splineToSplineHeading(new Pose2d(68, -7.75, Math.toRadians(0)), Math.toRadians(-2.5))
                 .addDisplacementMarker(.25,0 , () -> {
                     // This marker runs two seconds into the trajectory
-                    slides.move(854);
-
+                    slides.move(454);
                     // Run your action in here!
                 })
                 .addDisplacementMarker(.5,0, () -> {
@@ -109,33 +115,48 @@ public class MecanumRoadRunnerAutoAsyncJunctionDetection extends LinearOpMode {
                 })
                 .build();
         TrajectorySequence scoreStack = drive.trajectorySequenceBuilder(toStack.end())
-                .back(18)
-                .addTemporalMarker(.2,() -> {
-                    slides.move(7350);
-                })
-                .lineToLinearHeading(new Pose2d(36.5, -8.6, Math.toRadians(121.25)))
+                .lineToConstantHeading(new Vector2d(50,-8))
+                .lineToLinearHeading(new Pose2d(36.5, -8.6, Math.toRadians(117.25)))
                 .build();
         TrajectorySequence toJunctionHigh = drive.trajectorySequenceBuilder(scoreStack.end())
-                .forward(3)
+                .forward(5.625)
                 .build();
-        Trajectory toStackAfter = drive.trajectoryBuilder(scoreStack.end())
-                .lineToLinearHeading(new Pose2d(57, -12, Math.toRadians(0)))
+        TrajectorySequence scoreStack2 = drive.trajectorySequenceBuilder(toJunctionHigh.end())
+                .back(5.625)
+                .lineToLinearHeading(new Pose2d(68, -7.75, Math.toRadians(0)))
+                .addDisplacementMarker(.05,0, () -> {
+                    flapper.move(Intake.state.CLOSE);
+                })
+                .addDisplacementMarker(.15,0 , () -> {
+                    // This marker runs two seconds into the trajectory
+                    slides.move(310);
+                    // Run your action in here!
+                })
+                .addDisplacementMarker(.5,0, () -> {
+                    flapper.move(Intake.state.OPEN);
+                })
                 .build();
-        TrajectorySequence zone3Strafe = drive.trajectorySequenceBuilder(toJunction.end())
-                .back(8)
-                .lineToLinearHeading(new Pose2d(57, -31, Math.toRadians(90)))
+
+        TrajectorySequence zone3Strafe = drive.trajectorySequenceBuilder(toJunctionHigh.end())
+                .addTemporalMarker(.2, () -> {
+                    flapper.move(Intake.state.CLOSE);
+                })
+                .back(6.5)
+                .lineToLinearHeading(new Pose2d(57, -8, Math.toRadians(90)))
                 .addDisplacementMarker(.9,0, () -> {
                     // This marker runs two seconds into the trajectory
                     slides.move(0);
 
                     // Run your action in here!
                 })
-
                 .build();
 
-        TrajectorySequence zone1Strafe = drive.trajectorySequenceBuilder(toJunction.end())
-                .back(4.5)
-                .lineToLinearHeading(new Pose2d(16, -34, Math.toRadians(90)))
+        TrajectorySequence zone1Strafe = drive.trajectorySequenceBuilder(toJunctionHigh.end())
+                .addTemporalMarker(.2, () -> {
+                    flapper.move(Intake.state.CLOSE);
+                })
+                .back(6.5)
+                .lineToLinearHeading(new Pose2d(23, -8, Math.toRadians(90)))
                 .addDisplacementMarker(.9,0, () -> {
                     // This marker runs two seconds into the trajectory
                     slides.move(0);
@@ -144,9 +165,12 @@ public class MecanumRoadRunnerAutoAsyncJunctionDetection extends LinearOpMode {
                 })
                 .build();
 
-        TrajectorySequence zone2Strafe = drive.trajectorySequenceBuilder(toJunction.end())
-                .back(4.5)
-                .lineToLinearHeading(new Pose2d(33, -34, Math.toRadians(90)))
+        TrajectorySequence zone2Strafe = drive.trajectorySequenceBuilder(toJunctionHigh.end())
+                .addTemporalMarker(.2, () -> {
+                    flapper.move(Intake.state.CLOSE);
+                })
+                .back(6.5)
+                .lineToLinearHeading(new Pose2d(42, -8, Math.toRadians(90)))
                 .addDisplacementMarker(.9,0, () -> {
                     // This marker runs two seconds into the trajectory
                     slides.move(0);
@@ -192,7 +216,8 @@ public class MecanumRoadRunnerAutoAsyncJunctionDetection extends LinearOpMode {
             }
         });
 
-
+        flapper.move(Intake.state.CLOSE);
+        sleep(1000);
         slides.init();
         telemetry.addLine("Slides are good");
         telemetry.update();
@@ -256,10 +281,7 @@ public class MecanumRoadRunnerAutoAsyncJunctionDetection extends LinearOpMode {
 
 //Init seqeuence
         state = DRIVE_STATE.PRELOAD;
-        slides.control(-448, 3, 1);
-        flapper.move(Intake.state.CLOSE);
-        sleep(1000);
-        slides.control(1200, 3, 1);
+//        slides.control(1200, 3, 1);
         drive.followTrajectorySequenceAsync(firstDrive);
         slides.move(4300);
 
@@ -270,32 +292,33 @@ public class MecanumRoadRunnerAutoAsyncJunctionDetection extends LinearOpMode {
                     telemetry.addLine("PRELOAD");
                     if (!drive.isBusy() && !slides.isBusy()) {
                         if(junctionDetectionPipeline.getLocation() == null){
-                            state = DRIVE_STATE.FIRST_SCORE;
+                            state = DRIVE_STATE.FIRST_TRAJ;
                             telemetry.addLine("Target");
                             telemetry.update();
                             drive.followTrajectoryAsync(toJunction);
+                            break;
                         }
                         switch (junctionDetectionPipeline.getLocation()){
                             case TARGET:
-                                state = DRIVE_STATE.FIRST_SCORE;
+                                state = DRIVE_STATE.FIRST_TRAJ;
                                 telemetry.addLine("Target");
                                 telemetry.update();
                                 toJunction = drive.trajectoryBuilder(firstDrive.end().plus(new Pose2d(0,0,Math.toRadians(turns))))
-                                        .back(.01)
+                                        .forward(6)
                                         .build();
                                 drive.followTrajectoryAsync(toJunction);
                                 break;
                             case UP:
                                 telemetry.addLine("UP");
                                 telemetry.update();
-                                drive.turnAsync(Math.toRadians(-2.5));
-                                turns -= 2.5;
+                                drive.turn(Math.toRadians(-7.5));
+                                turns -= 7.5;
                                 break;
                             case BELOW:
                                 telemetry.addLine("Below");
                                 telemetry.update();
-                                drive.turnAsync(Math.toRadians(2.5));
-                                turns += 2.5;
+                                drive.turn(Math.toRadians(7.5));
+                                turns += 7.5;
                                 break;
                         }
 
@@ -303,25 +326,67 @@ public class MecanumRoadRunnerAutoAsyncJunctionDetection extends LinearOpMode {
 
                     }
                     break;
-                case FIRST_SCORE:
+                case FIRST_TRAJ:
                     telemetry.addLine("FIRST_SCORE");
 
                     if(!drive.isBusy() && !slides.isBusy()) {
-                        slides.control(4100, 5,1);
+                        slides.control(4000, 5,1);
                         sleep(750);
                         flapper.move(Intake.state.OPEN);
                         slides.control(4300, 5,1);
                         flapper.move(Intake.state.CLOSE);
 
-                        state = DRIVE_STATE.SEC_TRAJ;
+                        state = DRIVE_STATE.STACK_FIRST;
                     }
                     break;
                 case STACK_FIRST:
                     telemetry.addLine("STACK FIRST");
                     if (!drive.isBusy() && !slides.isBusy()){
                         drive.followTrajectorySequenceAsync(toStack);
-                        state = DRIVE_STATE.PARK;
+                        state = DRIVE_STATE.SCORE_STACK;
                     }
+                    break;
+                case SCORE_STACK:
+                    telemetry.addLine("SCORE STACk");
+                    if(!drive.isBusy() && !slides.isBusy()){
+                        flapper.move(Intake.state.CLOSE);
+                        slides.control(1000,5,1);
+                        drive.followTrajectorySequenceAsync(scoreStack);
+
+                        slides.move(4400);
+                        state = DRIVE_STATE.toJunction;
+                    }
+                    break;
+                case toJunction:
+                    if(!drive.isBusy()){
+                        drive.followTrajectorySequenceAsync(toJunctionHigh);
+                        state = DRIVE_STATE.SCORE_STACK2;
+
+                    }
+                    break;
+                case SCORE_STACK2:
+                    if(!drive.isBusy() && !slides.isBusy()){
+                        slides.control(3800, 5, 1);
+                        flapper.move(Intake.state.OPEN);
+                        sleep(1000);
+                        slides.control(4400, 5, 1);
+                        pauseTime = runtime.time();
+                        state = DRIVE_STATE.SCORE_STACK3;
+                    }
+                    break;
+                case SCORE_STACK3:
+                    if(!drive.isBusy() && !slides.isBusy()){
+                        conesLeft--;
+                        if(conesLeft == 4){
+                            state = DRIVE_STATE.SEC_TRAJ;
+                        }
+                        else {
+                            drive.followTrajectorySequenceAsync(scoreStack2);
+                            state = DRIVE_STATE.toJunction;
+                        }
+                    }
+                    break;
+
                 case SEC_TRAJ:
                     telemetry.addLine("SEC_TRAJ");
 
