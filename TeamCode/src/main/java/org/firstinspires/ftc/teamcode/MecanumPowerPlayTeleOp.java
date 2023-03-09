@@ -54,7 +54,9 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
     public enum DRIVE_STATE{
         DRIVE_TANK,
         DRIVE_STRAFE,
-        SCAN
+        SCAN_TO_RIGHT,
+        SCAN_TO_LEFT,
+        WAIT
     }
     boolean closedPrior = false;
     public enum SLIDE_STATE{
@@ -159,32 +161,40 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
         double LEDTIME = time.time();
         while(!isStopRequested() && opModeIsActive()) {
             switch (command) {
-                case SCAN:
+                case SCAN_TO_LEFT:
+                    frontRight.setPower(speed);
+                    backRight.setPower(speed);
+                    frontLeft.setPower(-speed);
+                    backLeft.setPower(-speed);
+                    command = DRIVE_STATE.WAIT;
+                    break;
+                case SCAN_TO_RIGHT:
+                    frontRight.setPower(-speed);
+                    backRight.setPower(-speed);
+                    frontLeft.setPower(speed);
+                    backLeft.setPower(speed);
+                    command = DRIVE_STATE.WAIT;
+                    break;
+                case WAIT:
+                    if(gamepad1.y){
+                        command = DRIVE_STATE.DRIVE_STRAFE;
+                        break;
+                    }
                     if (junctionDetectionPipeline.getLocation() == null){
                         command = DRIVE_STATE.DRIVE_TANK;
                         break;
                     }
                     switch (junctionDetectionPipeline.getLocation()) {
                         case TARGET:
+                            telemetry.addLine("TARGET)");
                             frontLeft.setPower(0);
                             frontRight.setPower(0);
                             backLeft.setPower(0);
                             backRight.setPower(0);
                             command = DRIVE_STATE.DRIVE_TANK;
                             break;
-                        case UP:
-                            frontRight.setPower(speed);
-                            backRight.setPower(speed);
-                            frontLeft.setPower(-speed);
-                            backLeft.setPower(-speed);
-                            break;
-                        case BELOW:
-                            frontRight.setPower(-speed);
-                            backRight.setPower(-speed);
-                            frontLeft.setPower(speed);
-                            backLeft.setPower(speed);
-                            break;
                     }
+                    break;
                 case DRIVE_TANK:
                     double leftPower = sameSignSqrt(-gamepad1.left_stick_y);
                     double rightPower = sameSignSqrt(-gamepad1.right_stick_y);
@@ -198,13 +208,21 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
                         command = DRIVE_STATE.DRIVE_STRAFE;
                     }
                     if(gamepad1.b){
-                        command = DRIVE_STATE.SCAN;
+                        command = DRIVE_STATE.SCAN_TO_RIGHT;
+                        break;
+                    }
+                    if(gamepad1.x){
+                        command = DRIVE_STATE.SCAN_TO_LEFT;
                         break;
                     }
 
                 case DRIVE_STRAFE:
                     if(gamepad1.b){
-                        command = DRIVE_STATE.SCAN;
+                        command = DRIVE_STATE.SCAN_TO_RIGHT;
+                        break;
+                    }
+                    if(gamepad1.x){
+                        command = DRIVE_STATE.SCAN_TO_LEFT;
                         break;
                     }
                     if (gamepad1.left_trigger != 0) {
