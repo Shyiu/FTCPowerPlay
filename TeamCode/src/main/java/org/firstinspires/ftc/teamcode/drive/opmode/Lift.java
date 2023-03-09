@@ -23,7 +23,7 @@ public class Lift {
     private double powerReduction = 1;
     private double conversion = -1;
     private boolean reached = false;
-    private double threshold = .71;
+    private double threshold = .65;
     private boolean auto = false;
     HardwareMap hardware;
 
@@ -99,7 +99,7 @@ public class Lift {
 
     public void reset() {
         color.setGain((float) GAIN);
-        slides.setPower(-.2);
+        slides.setPower(-.1);
         NormalizedRGBA colors = color.getNormalizedColors();
         while (colors.green < threshold && colors.red < threshold) {
 
