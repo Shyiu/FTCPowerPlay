@@ -64,7 +64,7 @@ public class JunctionPipeline extends OpenCvPipeline {
         telemetry.addData("Left percentage", Math.round(targetValue * 100) + "%");
         telemetry.addData("Right percentage", Math.round(topValue * 100) + "%");
 
-        boolean onTarget = targetValue > PERCENT_COLOR_THRESHOLD;
+        boolean onTarget = targetValue > .33;
         boolean aboveTarget = topValue > PERCENT_COLOR_THRESHOLD;
         boolean bottomTarget = bottomValue > PERCENT_COLOR_THRESHOLD;
 
