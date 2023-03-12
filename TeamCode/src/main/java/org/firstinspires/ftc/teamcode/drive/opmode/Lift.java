@@ -56,7 +56,7 @@ public class Lift {
         auto = b;
     }
     public boolean barelyBusy() {
-        return Math.abs(startPos - slides.getCurrentPosition()) < Math.abs(targetPos-startPos)*0.2;
+        return Math.abs(startPos - slides.getCurrentPosition()) < Math.abs(targetPos-startPos)*0.4;
     }
 
     public boolean isBusy() {

@@ -266,7 +266,10 @@ public class TrajectorySequenceRunner {
     public Pose2d getLastPoseError() {
         return lastPoseError;
     }
-
+    public void breakFollowing() {
+        currentTrajectorySequence = null;
+        remainingMarkers.clear();
+    }
     public boolean isBusy() {
         return currentTrajectorySequence != null;
     }

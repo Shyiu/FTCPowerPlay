@@ -11,9 +11,9 @@ public class MecanumBotConstant {
     public static String intake = "flapper";
     public static String left_servo = "right";//Control Hub 4
     public static String right_servo = "left";//Control Hub 5
-    public static double TOP_HARDSTOP = 4300;
+    public static double TOP_HARDSTOP = 4569;
     public static double BOTTOM_HARDSTOP = -550;
-    public static double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 1615, 3023, TOP_HARDSTOP};
+    public static double[] SLIDE_POSITIONS = {BOTTOM_HARDSTOP, 1942, 3248, TOP_HARDSTOP};
     public static double[] CONE_STACK_LEVELS = {-498, -222, -65, 159, 310}; //Find these values
     public static String slides = "slides";//Expansion Hub 0  40
     public static String cameraApril = "Webcam 1";

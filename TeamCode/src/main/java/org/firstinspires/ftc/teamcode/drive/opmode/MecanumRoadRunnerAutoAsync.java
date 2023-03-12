@@ -29,7 +29,7 @@ import java.util.HashMap;
  * */
 
 @Config
-@Autonomous(name = "Mecanum Roadrunner Async")
+@Autonomous(name = "Mecanum Roadrunner Async 1+1")
 public class MecanumRoadRunnerAutoAsync extends LinearOpMode {
     public static int parking_zone = 2;
     public static double zone3X = 20;

@@ -74,21 +74,22 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
         CONE_GRAB,
         VOLTAGE
     }
-    LIGHT_STATE led = LIGHT_STATE.DEFAULT;
+//    LIGHT_STATE led = LIGHT_STATE.DEFAULT;
     SLIDE_STATE slide_position = SLIDE_STATE.WAIT;
     //Between field centric, straightforward and my weird version
     double leftTgtPower = 0, rightTgtPower = 0;
     RevBlinkinLedDriver.BlinkinPattern park, override, cone, voltage;
-    RevBlinkinLedDriver ledDevice;
+//    RevBlinkinLedDriver ledDevice;
     public MecanumBotConstant names = new MecanumBotConstant();
     //60 is encoder position
     //Slide Related Variables
     double TOP_HARDSTOP = names.TOP_HARDSTOP;
     double BOTTOM_HARDSTOP = names.BOTTOM_HARDSTOP;//Actually supposed to be 0
     double[] SLIDE_POSITIONS = names.SLIDE_POSITIONS;
-    double[] STACK_POSITIONS = names.CONE_STACK_LEVELS;
+//    double[] STACK_POSITIONS = names.CONE_STACK_LEVELS;
     int conesOnStack = 5;
 
+    int slideIndexObs = 0;
     int slideIndex = 0;
     boolean cone_stack = false;
     boolean toggleHardstops = false;
@@ -98,10 +99,10 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
 
     OpenCvCamera junctionCam;
     JunctionPipeline junctionDetectionPipeline;
-    public static double speed = .8;
+    public static double speed = .4;
     public static DRIVE_STATE command = DRIVE_STATE.DRIVE_TANK;
 
-    public void runOpMode() throws InterruptedException{
+    public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         junctionCam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, names.cameraJunction));
@@ -147,11 +148,11 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
 
-        ledDevice = hardwareMap.get(RevBlinkinLedDriver.class, names.led);
-        voltage = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_WHITE;
-        park = RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_OCEAN_PALETTE;
-        cone = RevBlinkinLedDriver.BlinkinPattern.LAWN_GREEN;
-        override = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_RED;
+//        ledDevice = hardwareMap.get(RevBlinkinLedDriver.class, names.led);
+//        voltage = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_WHITE;
+//        park = RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_OCEAN_PALETTE;
+//        cone = RevBlinkinLedDriver.BlinkinPattern.LAWN_GREEN;
+//        override = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_RED;
 
         // Makes the Driver Hub output the message "Status: Initialized"
         telemetry.addData("Status", "Initialized");
@@ -159,7 +160,7 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
         waitForStart();
         time.reset();
         double LEDTIME = time.time();
-        while(!isStopRequested() && opModeIsActive()) {
+        while (!isStopRequested() && opModeIsActive()) {
             switch (command) {
                 case SCAN_TO_LEFT:
                     frontRight.setPower(speed);
@@ -176,11 +177,11 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
                     command = DRIVE_STATE.WAIT;
                     break;
                 case WAIT:
-                    if(gamepad1.y){
+                    if (gamepad1.y) {
                         command = DRIVE_STATE.DRIVE_STRAFE;
                         break;
                     }
-                    if (junctionDetectionPipeline.getLocation() == null){
+                    if (junctionDetectionPipeline.getLocation() == null) {
                         command = DRIVE_STATE.DRIVE_TANK;
                         break;
                     }
@@ -207,21 +208,21 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
                     if (leftPower == 0 && rightPower == 0) {
                         command = DRIVE_STATE.DRIVE_STRAFE;
                     }
-                    if(gamepad1.b){
+                    if (gamepad1.b) {
                         command = DRIVE_STATE.SCAN_TO_RIGHT;
                         break;
                     }
-                    if(gamepad1.x){
+                    if (gamepad1.x) {
                         command = DRIVE_STATE.SCAN_TO_LEFT;
                         break;
                     }
 
                 case DRIVE_STRAFE:
-                    if(gamepad1.b){
+                    if (gamepad1.b) {
                         command = DRIVE_STATE.SCAN_TO_RIGHT;
                         break;
                     }
-                    if(gamepad1.x){
+                    if (gamepad1.x) {
                         command = DRIVE_STATE.SCAN_TO_LEFT;
                         break;
                     }
@@ -261,13 +262,12 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
                 } else
                     slides.setPower(0);
             }
-
-            switch (slide_position) {
-                case WAIT:
-                    if(!slides.barelyBusy()) {
-                        if (priorPosition != slideIndex) {
-                            priorPosition = slideIndex;
-                            slideTimeout = time.time();
+                switch (slide_position) {
+                    case WAIT:
+                        if (!slides.barelyBusy()) {
+                            if (priorPosition != slideIndex) {
+                                priorPosition = slideIndex;
+                                slideTimeout = time.time();
                                 if (slideIndex == 0) {
                                     slide_position = SLIDE_STATE.BOTTOM;
                                     break;
@@ -286,175 +286,175 @@ public class MecanumPowerPlayTeleOp extends LinearOpMode {
                         if (gamepad2.dpad_up) {
                             if (slideIndex < SLIDE_POSITIONS.length - 1) {
                                 slideIndex++;
+                                if(slides.getCurrentPosition() > SLIDE_POSITIONS[slideIndex]){
+                                    slideIndex++;
+                                    if(slideIndex != SLIDE_POSITIONS.length - 1 && slides.getCurrentPosition() > SLIDE_POSITIONS[slideIndex+1]){
+                                        slideIndex++;
+                                    }
+                                }
                                 break;
                             }
                         }
                         if (gamepad2.dpad_down) {
                             if (slideIndex > 0) {
                                 slideIndex--;
+                                if(slides.getCurrentPosition() < SLIDE_POSITIONS[slideIndex]){
+                                    slideIndex--;
+                                    if(slideIndex != 0 && slides.getCurrentPosition() > SLIDE_POSITIONS[slideIndex-1]){
+                                        slideIndex--;
+                                    }
+                                }
                                 break;
                             }
                         }
                         if (gamepad2.left_bumper) {
                             slideIndex = 0;
+                            slide_position = SLIDE_STATE.BOTTOM;
                             break;
                         }
                         if (gamepad2.right_bumper) {
                             slideIndex = SLIDE_POSITIONS.length - 1;
+                            slide_position = SLIDE_STATE.HIGH;
                             break;
                         }
-
-                    break;
-                case BOTTOM:
-                    slides.move(SLIDE_POSITIONS[0]);
-                    //if (time.seconds() - slideTimeout > SLIDE_TIME) {
-                    slide_position = SLIDE_STATE.WAIT;
-                    leftServo.setPower(names.leftServoClosedPosition);
-                    rightServo.setPower(names.rightServoClosedPosition);
-                    //}
-                    closedPrior = true;
-                    break;
-                case LOW:
-                    slides.move(SLIDE_POSITIONS[1]);
-                    //if (time.seconds() - slideTimeout > SLIDE_TIME) {
-                    slide_position = SLIDE_STATE.WAIT;
-                    //}
-                    break;
-                case MEDIUM:
-                    slides.move(SLIDE_POSITIONS[2]);
-                    //if (time.seconds() - slideTimeout > SLIDE_TIME) {
-                    slide_position = SLIDE_STATE.WAIT;
-                    //}
-                    break;
-                case HIGH:
-                    slides.move(SLIDE_POSITIONS[SLIDE_POSITIONS.length - 1]);
-                    //if (time.seconds() - slideTimeout > SLIDE_TIME) {
-                    slide_position = SLIDE_STATE.WAIT;
-                    //}
-                    break;
-            }
-            if(gamepad2.dpad_left || gamepad2.dpad_right){
-                slides.move(240);
-            }
-            switch(flapperToggle){
-                case MOVE:
-                    if(timer.time(TimeUnit.MILLISECONDS) - currentTime > 500) {
-                        flapperToggle = FLAPPER_STATE.WAIT;
-                    }
-                    break;
-                case WAIT:
-                    if(gamepad2.x){
-                        if (closedPrior){
-                            flapperToggle = FLAPPER_STATE.MOVE;
-                            rightServo.setPower(names.rightServoOpenPosition);
-                            leftServo.setPower(names.leftServoOpenPosition);
-                            currentTime = timer.time(TimeUnit.MILLISECONDS);
-                            closedPrior = false;
+                        break;
+                    case BOTTOM:
+                        slides.move(SLIDE_POSITIONS[0]);
+                        //if (time.seconds() - slideTimeout > SLIDE_TIME) {
+                        slide_position = SLIDE_STATE.WAIT;
+                        leftServo.setPower(names.leftServoClosedPosition);
+                        rightServo.setPower(names.rightServoClosedPosition);
+                        //}
+                        closedPrior = true;
+                        break;
+                    case LOW:
+                        slides.move(SLIDE_POSITIONS[1]);
+                        //if (time.seconds() - slideTimeout > SLIDE_TIME) {
+                        slide_position = SLIDE_STATE.WAIT;
+                        //}
+                        break;
+                    case MEDIUM:
+                        slides.move(SLIDE_POSITIONS[2]);
+                        //if (time.seconds() - slideTimeout > SLIDE_TIME) {
+                        slide_position = SLIDE_STATE.WAIT;
+                        //}
+                        break;
+                    case HIGH:
+                        slides.move(SLIDE_POSITIONS[SLIDE_POSITIONS.length - 1]);
+                        //if (time.seconds() - slideTimeout > SLIDE_TIME) {
+                        slide_position = SLIDE_STATE.WAIT;
+                        //}
+                        break;
+                }
+                switch (flapperToggle) {
+                    case MOVE:
+                        if (timer.time(TimeUnit.MILLISECONDS) - currentTime > 500) {
+                            flapperToggle = FLAPPER_STATE.WAIT;
                         }
-                        else{
-                            flapperToggle = FLAPPER_STATE.MOVE;
-                            rightServo.setPower(names.rightServoClosedPosition);
-                            leftServo.setPower(names.leftServoClosedPosition);
-                            currentTime = timer.time(TimeUnit.MILLISECONDS);
-                            closedPrior = true;
+                        break;
+                    case WAIT:
+                        if (gamepad2.x) {
+                            if (closedPrior) {
+                                flapperToggle = FLAPPER_STATE.MOVE;
+                                rightServo.setPower(names.rightServoOpenPosition);
+                                leftServo.setPower(names.leftServoOpenPosition);
+                                currentTime = timer.time(TimeUnit.MILLISECONDS);
+                                closedPrior = false;
+                            } else {
+                                flapperToggle = FLAPPER_STATE.MOVE;
+                                rightServo.setPower(names.rightServoClosedPosition);
+                                leftServo.setPower(names.leftServoClosedPosition);
+                                currentTime = timer.time(TimeUnit.MILLISECONDS);
+                                closedPrior = true;
+                            }
                         }
-                    }
-                    break;
+//                    if(slides.getCurrentPosition() < 1650 && slides.getCurrentPosition() > 465 && !closedPrior){
+//                        flapperToggle = FLAPPER_STATE.MOVE;
+//                        rightServo.setPower(names.rightServoClosedPosition);
+//                        leftServo.setPower(names.leftServoClosedPosition);
+//                        currentTime = timer.time(TimeUnit.MILLISECONDS);
+//                    }
+//                    if(slides.getCurrentPosition() < 465 && !closedPrior){
+//                        flapperToggle = FLAPPER_STATE.MOVE;
+//                        rightServo.setPower(names.rightServoOpenPosition);
+//                        leftServo.setPower(names.leftServoOpenPosition);
+//                        currentTime = timer.time(TimeUnit.MILLISECONDS);
+//                        closedPrior = false;
+//                    }
+                        break;
+                    //1650
 
-            }
 
-            if(gamepad2.right_stick_x != 0){
-                double rightTarget = rightServo.getPower() - gamepad2.right_stick_x/200.0;
-                double leftTarget = leftServo.getPower() - gamepad2.right_stick_x/200.0;
-                if (rightTarget > names.rightHardStopOut && leftTarget < names.leftHardStopOut && rightTarget < names.rightHardStopIn && leftTarget > names.leftHardStopIn) {
-                    rightServo.setPower(rightTarget);
-                    leftServo.setPower(leftTarget);
                 }
 
-            }
-            if(!toggleHardstops)
-            {
-                led = LIGHT_STATE.DEFAULT;
-            }
-            else
-            {
-                led = LIGHT_STATE.OVERRIDE_SLIDES;
-            }
-
-            if (gamepad2.b) {
-                if (toggleHardstops) {
-                    if (slideIndex == 0) {
-                        double difference = slides.getCurrentPosition() - BOTTOM_HARDSTOP;
-                        BOTTOM_HARDSTOP = slides.getCurrentPosition();
-                        SLIDE_POSITIONS[0] = BOTTOM_HARDSTOP;
-                        SLIDE_POSITIONS[1] += difference;
-                        SLIDE_POSITIONS[2] += difference;
-
-                    } else if (slideIndex == SLIDE_POSITIONS.length - 1) {
-                        double difference = TOP_HARDSTOP - slides.getCurrentPosition();
-                        TOP_HARDSTOP = slides.getCurrentPosition();
-                        SLIDE_POSITIONS[SLIDE_POSITIONS.length - 1] = TOP_HARDSTOP;
-                        SLIDE_POSITIONS[1] -= difference;
-                        SLIDE_POSITIONS[2] -= difference;
+                if (gamepad2.right_stick_x != 0) {
+                    double rightTarget = rightServo.getPower() - gamepad2.right_stick_x / 200.0;
+                    double leftTarget = leftServo.getPower() - gamepad2.right_stick_x / 200.0;
+                    if (rightTarget > names.rightHardStopOut && leftTarget < names.leftHardStopOut && rightTarget < names.rightHardStopIn && leftTarget > names.leftHardStopIn) {
+                        rightServo.setPower(rightTarget);
+                        leftServo.setPower(leftTarget);
                     }
-                    toggleHardstops = false;
-                    while (gamepad2.b) {
-                        telemetry.addLine("Waiting for User to Release B");
+                }
+//                if (!toggleHardstops) {
+//                    led = LIGHT_STATE.DEFAULT;
+//                } else {
+//                    led = LIGHT_STATE.OVERRIDE_SLIDES;
+//                }
+
+                if (gamepad2.b) {
+                    if (toggleHardstops) {
+                        if (slideIndex == 0) {
+                            BOTTOM_HARDSTOP = slides.getCurrentPosition();
+                            SLIDE_POSITIONS[0] = BOTTOM_HARDSTOP;
+
+
+                        } else if (slideIndex == SLIDE_POSITIONS.length - 1) {
+                            TOP_HARDSTOP = slides.getCurrentPosition();
+                            SLIDE_POSITIONS[SLIDE_POSITIONS.length - 1] = TOP_HARDSTOP;
+                        }
+                        toggleHardstops = false;
+                        while (gamepad2.b) {
+                            telemetry.addLine("Waiting for User to Release B");
+                            telemetry.update();
+                        }
+                        telemetry.clear();
+                        telemetry.update();
+                    } else {
+                        toggleHardstops = true;
+                        while (gamepad2.b) {
+                            telemetry.addLine("waiting for User to Release B");
+                            telemetry.update();
+                        }
+                        telemetry.clear();
                         telemetry.update();
                     }
-                    telemetry.clear();
-                    telemetry.update();
-                } else {
-                    toggleHardstops = true;
-                    while (gamepad2.b) {
-                        telemetry.addLine("waiting for User to Release B");
-                        telemetry.update();
-                    }
-                    telemetry.clear();
-                    telemetry.update();
                 }
-            }
 
-            if (slides.isBusy()) {
-                slides.update();
-            }
-
-            if (toggleHardstops) {
-                ledDevice.setPattern(override);
-            }
-            else if (cone_stack){
-                ledDevice.setPattern(RevBlinkinLedDriver.BlinkinPattern.HOT_PINK);
-            }
-            else if(time.time() - LEDTIME > 130) {
-                ledDevice.setPattern(park);
-            }
-            else if(slides.getBatteryVoltage() < 8) {
-                ledDevice.setPattern(voltage);
-            }
-            else{
-                ledDevice.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLACK);
+                if (slides.isBusy()) {
+                    slides.update();
                 }
 
 
+                telemetry.addData("Left Target Power", leftTgtPower);
+                telemetry.addData("Right Target Power", rightTgtPower);
+                telemetry.addData("Front Right Motor Power", frontRight.getPower());
+                telemetry.addData("Front Left Motor Power", frontLeft.getPower());
+                telemetry.addData("Back Right Motor Power", backRight.getPower());
+                telemetry.addData("Back Left Motor Power", backLeft.getPower());
+                telemetry.addData("Slide Positions", slides.getCurrentPos());
+                telemetry.addData("Slide Target", slides.targetPos);
+                telemetry.addData("Slide State", slides.isBusy());
+                telemetry.addData("Slide Has Reached:", slides.getReached());
+                telemetry.addData("Status", "Running");
+                telemetry.addData("Voltage", slides.getBatteryVoltage() + "V");
+                telemetry.addData("Gamepad2 Right x Power", gamepad2.right_stick_x);
+                telemetry.update();
+            }
 
-            telemetry.addData("Left Target Power", leftTgtPower);
-            telemetry.addData("Right Target Power", rightTgtPower);
-            telemetry.addData("Front Right Motor Power", frontRight.getPower());
-            telemetry.addData("Front Left Motor Power", frontLeft.getPower());
-            telemetry.addData("Back Right Motor Power", backRight.getPower());
-            telemetry.addData("Back Left Motor Power", backLeft.getPower());
-            telemetry.addData("Slide Positions", slides.getCurrentPos());
-            telemetry.addData("Slide Target", slides.targetPos);
-            telemetry.addData("Slide State", slides.isBusy());
-            telemetry.addData("Slide Has Reached:", slides.getReached());
-            telemetry.addData("Status", "Running");
-            telemetry.addData("Gamepad2 Right x Power", gamepad2.right_stick_x);
-            telemetry.update();
+            rightServo.setPower(names.rightServoClosedPosition);
+            leftServo.setPower(names.leftServoClosedPosition);
         }
 
-        rightServo.setPower(names.rightServoClosedPosition);
-        leftServo.setPower(names.leftServoClosedPosition);
-    }
 
 
     public double closerToV2(double v1, double v2, double v3){

@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.drive.opmode;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -115,6 +116,12 @@ public class MecanumRoadRunnerAutoAsyncTest extends LinearOpMode {
                 .addDisplacementMarker(.5,0, () -> {
                     flapper.move(Intake.state.OPEN);
                 })
+                .build();
+        TrajectorySequence firstDriveBetter = drive.trajectorySequenceBuilder(new Pose2d(33.00, -62.00, Math.toRadians(90.00)))
+                .splineTo(new Vector2d(24.09, -60.75), Math.toRadians(184.82))
+                .splineTo(new Vector2d(13.12, -57.56), Math.toRadians(180.00))
+                .splineTo(new Vector2d(-0.35, -52.84), Math.toRadians(82.87))
+                .splineTo(new Vector2d(0, -35.90), Math.toRadians(90.00))
                 .build();
         TrajectorySequence scoreStack = drive.trajectorySequenceBuilder(toStack.end())
                 .waitSeconds(2)

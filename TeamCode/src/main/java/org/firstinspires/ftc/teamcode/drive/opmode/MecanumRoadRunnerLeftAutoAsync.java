@@ -28,7 +28,7 @@ import java.util.HashMap;
  * */
 
 @Config
-@Autonomous(name = "Mecanum Left Roadrunner Async")
+@Autonomous(name = "Mecanum Left 1+1 Async")
 public class MecanumRoadRunnerLeftAutoAsync extends LinearOpMode {
     public static int parking_zone = 2;
     public static double zone3X = 20;
